@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/location_strings.dart';
 import '../../core/constants/score_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -10,13 +11,18 @@ class ScoreNeighborhoodHeader extends StatelessWidget {
     super.key,
     required this.neighborhood,
     required this.city,
+    this.isExploring = false,
   });
 
   final String neighborhood;
   final String city;
+  final bool isExploring;
 
   @override
   Widget build(BuildContext context) {
+    final prefix =
+        isExploring ? ScoreStrings.cityPrefix : ScoreStrings.neighborhoodPrefix;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -27,7 +33,7 @@ class ScoreNeighborhoodHeader extends StatelessWidget {
             ),
             children: [
               TextSpan(
-                text: '${ScoreStrings.neighborhoodPrefix} ',
+                text: '$prefix ',
                 style: AppTypography.bodySecondary.copyWith(
                   color: AppColors.textPrimary,
                   fontSize: 16,
@@ -38,7 +44,16 @@ class ScoreNeighborhoodHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (city.isNotEmpty) ...[
+        if (isExploring) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            LocationStrings.exploringSuffix,
+            style: AppTypography.bodySecondary.copyWith(
+              fontSize: 14,
+              color: AppColors.primaryGreen,
+            ),
+          ),
+        ] else if (city.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             city,

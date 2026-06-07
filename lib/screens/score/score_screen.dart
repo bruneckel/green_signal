@@ -107,6 +107,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   ScoreNeighborhoodHeader(
                     neighborhood: neighborhood,
                     city: city,
+                    isExploring: widget.locationResolver.isExploring,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   if (_isLoading || _data == null)

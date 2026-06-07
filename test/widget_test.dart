@@ -548,6 +548,33 @@ void main() {
     expect(find.textContaining(LocationStrings.exploringSuffix), findsOneWidget);
   });
 
+  testWidgets('Score tab shows city label when exploring another location', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      LocationOverrideStore.keyForUser('user@example.com'):
+          '{"label":"Curitiba, PR","lat":-25.43,"lng":-49.27,"neighborhood":"Curitiba"}',
+    });
+
+    final auth = FakeAuthRepository();
+    final resolver = UnifiedLocationResolver(
+      overrideStore: LocationOverrideStore(),
+    );
+
+    await _loginAndGoHome(
+      tester,
+      authRepository: auth,
+      locationResolver: resolver,
+    );
+
+    await tester.tap(find.text(HomeStrings.navScore));
+    await tester.pumpAndSettle();
+
+    expect(find.text('${ScoreStrings.cityPrefix} Curitiba'), findsOneWidget);
+    expect(find.text('${ScoreStrings.neighborhoodPrefix} Curitiba'), findsNothing);
+    expect(find.text(LocationStrings.exploringSuffix), findsOneWidget);
+  });
+
   testWidgets('Tapping home location bar opens city picker sheet', (
     WidgetTester tester,
   ) async {
