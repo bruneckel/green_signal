@@ -68,6 +68,41 @@ void main() {
       client.dispose();
     });
 
+    test('resolveBrazilianCity falls back to city name when UF query fails',
+        () async {
+      final client = GeocodingClient(
+        client: MockClient((request) async {
+          final name = request.url.queryParameters['name'] ?? '';
+          if (name == 'Curitiba') {
+            return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'name': 'Curitiba',
+                    'admin1': 'Paraná',
+                    'country': 'Brazil',
+                    'latitude': -25.4296,
+                    'longitude': -49.2713,
+                  },
+                ],
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+
+      final resolved = await client.resolveBrazilianCity(
+        city: 'Curitiba',
+        state: 'PR',
+      );
+
+      expect(resolved.position.latitude, closeTo(-25.4296, 0.001));
+      expect(resolved.neighborhood, 'Curitiba');
+      client.dispose();
+    });
+
     test('resolveForUser falls back to city name when UF query fails', () async {
       const fozUser = UserAccount(
         name: 'Foz User',

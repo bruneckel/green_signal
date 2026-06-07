@@ -75,7 +75,10 @@ class UnifiedLocationResolver extends ChangeNotifier implements LocationResolver
     required String state,
     required String userEmail,
   }) async {
-    final geocoded = await _geocodingClient.resolve('$city, $state, Brasil');
+    final geocoded = await _geocodingClient.resolveBrazilianCity(
+      city: city,
+      state: state,
+    );
     if (_isGeocodeFailure(geocoded, city)) {
       throw StateError(LocationStrings.geocodeError);
     }

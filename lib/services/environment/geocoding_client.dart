@@ -95,6 +95,23 @@ class GeocodingClient {
     }
   }
 
+  Future<ResolvedLocation> resolveBrazilianCity({
+    required String city,
+    required String state,
+  }) async {
+    final cityStateResult = await resolve('$city, $state, Brasil');
+    if (!_isRejectedForCity(cityStateResult.position, city)) {
+      return cityStateResult;
+    }
+
+    final cityOnlyResult = await resolve(city);
+    if (!_isRejectedForCity(cityOnlyResult.position, city)) {
+      return cityOnlyResult;
+    }
+
+    return _fallbackLocation();
+  }
+
   Future<ResolvedLocation> resolveForUser(UserAccount user) async {
     if (user.hasStructuredAddress) {
       final fullAddress = '${user.formattedAddress}, Brasil';
@@ -103,15 +120,12 @@ class GeocodingClient {
         return fullResult;
       }
 
-      final cityResult = await resolve('${user.city}, ${user.state}, Brasil');
+      final cityResult = await resolveBrazilianCity(
+        city: user.city,
+        state: user.state,
+      );
       if (!_isRejectedForUser(cityResult.position, user)) {
         return cityResult;
-      }
-
-      // Open-Meteo often misses "City, UF, Brasil" but resolves the city name alone.
-      final cityOnlyResult = await resolve(user.city);
-      if (!_isRejectedForUser(cityOnlyResult.position, user)) {
-        return cityOnlyResult;
       }
     } else {
       final legacy = user.legacyAddress ?? user.address;
@@ -127,13 +141,14 @@ class GeocodingClient {
   }
 
   bool _isRejectedForUser(LatLng position, UserAccount user) {
-    if (!MapLayerData.isSaoPauloFallback(position)) return false;
-    return !_isSaoPauloProfile(user);
+    return _isRejectedForCity(position, user.city);
   }
 
-  bool _isSaoPauloProfile(UserAccount user) {
-    final city = user.city.toLowerCase();
-    return city.contains('são paulo') || city.contains('sao paulo');
+  bool _isRejectedForCity(LatLng position, String city) {
+    if (!MapLayerData.isSaoPauloFallback(position)) return false;
+    final normalizedCity = city.toLowerCase();
+    return !normalizedCity.contains('são paulo') &&
+        !normalizedCity.contains('sao paulo');
   }
 
   ResolvedLocation _fallbackLocation() {

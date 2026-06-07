@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:green_signal/core/constants/location_strings.dart';
 import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/models/map_layer_data.dart';
 import 'package:green_signal/services/location/location_override_store.dart';
@@ -34,6 +35,31 @@ void main() {
           GeocodingClient(
             client: MockClient((_) async => http.Response('', 500)),
           ),
+    );
+  }
+
+  GeocodingClient _curitibaGeocodingClient() {
+    return GeocodingClient(
+      client: MockClient((request) async {
+        final name = request.url.queryParameters['name'] ?? '';
+        if (name == 'Curitiba') {
+          return http.Response(
+            jsonEncode({
+              'results': [
+                {
+                  'name': 'Curitiba',
+                  'admin1': 'Paraná',
+                  'country': 'Brazil',
+                  'latitude': -25.4296,
+                  'longitude': -49.2713,
+                },
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response('{}', 404);
+      }),
     );
   }
 
@@ -172,6 +198,78 @@ void main() {
 
       expect(result.location.label, 'Foz do Iguaçu, PR');
       expect(result.location.neighborhood, 'Centro Cívico');
+      resolver.dispose();
+    });
+
+    test('setExploredCity persists override when city-only geocoding works',
+        () async {
+      final overrideStore = LocationOverrideStore();
+      final geocodingClient = _curitibaGeocodingClient();
+      final resolver = UnifiedLocationResolver(
+        coordinatesResolver: _fozCoordinatesResolver(
+          geocodingClient: geocodingClient,
+        ),
+        overrideStore: overrideStore,
+        geocodingClient: geocodingClient,
+      );
+
+      await resolver.setExploredCity(
+        city: 'Curitiba',
+        state: 'PR',
+        userEmail: 'user@example.com',
+      );
+
+      expect(overrideStore.isExploring, isTrue);
+      expect(overrideStore.current!.label, 'Curitiba, PR');
+      expect(overrideStore.current!.position.latitude, closeTo(-25.4296, 0.001));
+      resolver.dispose();
+    });
+
+    test('setExploredCity throws when geocoding falls back to São Paulo',
+        () async {
+      final geocodingClient = GeocodingClient(
+        client: MockClient((_) async => http.Response('{}', 404)),
+      );
+      final resolver = UnifiedLocationResolver(
+        coordinatesResolver: _fozCoordinatesResolver(
+          geocodingClient: geocodingClient,
+        ),
+        geocodingClient: geocodingClient,
+      );
+
+      await expectLater(
+        resolver.setExploredCity(
+          city: 'Curitiba',
+          state: 'PR',
+          userEmail: 'user@example.com',
+        ),
+        throwsA(
+          predicate((Object error) =>
+              error is StateError &&
+              error.message == LocationStrings.geocodeError),
+        ),
+      );
+      resolver.dispose();
+    });
+
+    test('setExploredCity accepts São Paulo fallback coordinates', () async {
+      final overrideStore = LocationOverrideStore();
+      final geocodingClient = GeocodingClient(
+        client: MockClient((_) async => http.Response('{}', 404)),
+      );
+      final resolver = UnifiedLocationResolver(
+        overrideStore: overrideStore,
+        geocodingClient: geocodingClient,
+      );
+
+      await resolver.setExploredCity(
+        city: 'São Paulo',
+        state: 'SP',
+        userEmail: 'user@example.com',
+      );
+
+      expect(overrideStore.current!.label, 'São Paulo, SP');
+      expect(overrideStore.current!.position, MapLayerData.saoPauloCenter);
       resolver.dispose();
     });
   });
