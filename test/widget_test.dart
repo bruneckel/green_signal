@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:green_signal/app.dart';
 import 'package:green_signal/core/constants/alert_strings.dart';
 import 'package:green_signal/core/constants/app_strings.dart';
-import 'package:green_signal/core/constants/community_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/profile_strings.dart';
@@ -524,80 +523,6 @@ void main() {
     expect(find.text('83'), findsOneWidget);
     expect(find.text('Ruim AQI 68'), findsOneWidget);
     expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
-  });
-
-  testWidgets('Bottom nav opens community screen with mock data', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.tap(find.text(HomeStrings.navCommunity));
-    await tester.pumpAndSettle();
-
-    expect(find.text(CommunityStrings.screenTitle), findsAtLeast(1));
-    expect(find.text('Maria R.'), findsOneWidget);
-    expect(find.text(CommunityStrings.filterFlood), findsAtLeast(1));
-    expect(
-      find.textContaining('Rua das Flores alagada'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('Community filter shows only flood reports', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.tap(find.text(HomeStrings.navCommunity));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text(CommunityStrings.filterFlood).first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Maria R.'), findsOneWidget);
-    expect(find.text('João C.'), findsNothing);
-  });
-
-  testWidgets('Community add button opens new report screen', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.tap(find.text(HomeStrings.navCommunity));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
-    await tester.pumpAndSettle();
-
-    expect(find.text(CommunityStrings.newReportTitle), findsOneWidget);
-    expect(find.text(CommunityStrings.submitReport), findsOneWidget);
-  });
-
-  testWidgets('New report submit shows success and returns to feed', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.tap(find.text(HomeStrings.navCommunity));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text(CommunityStrings.typeFlood).last);
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byType(TextFormField),
-      'Alagamento na rua principal.',
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text(CommunityStrings.submitReport));
-    await tester.pumpAndSettle();
-
-    expect(find.text(CommunityStrings.reportSuccess), findsOneWidget);
-    expect(find.text(CommunityStrings.screenTitle), findsAtLeast(1));
   });
 
   testWidgets('Home shows exploring label when location override is active', (

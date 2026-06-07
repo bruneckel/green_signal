@@ -38,11 +38,6 @@ class MainShell extends StatelessWidget {
       selectedIcon: Icons.bar_chart,
       label: HomeStrings.navScore,
     ),
-    _NavDestination(
-      icon: Icons.people_outline,
-      selectedIcon: Icons.people,
-      label: HomeStrings.navCommunity,
-    ),
   ];
 
   void _onTap(int index) {

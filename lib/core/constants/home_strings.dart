@@ -16,7 +16,6 @@ abstract final class HomeStrings {
   static const navMap = 'Mapa';
   static const navAlerts = 'Alertas';
   static const navScore = 'Bairro';
-  static const navCommunity = 'Comunidade';
 
   static const comingSoon = 'Em breve';
 }

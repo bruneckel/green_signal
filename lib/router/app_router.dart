@@ -5,8 +5,6 @@ import '../screens/alerts/alerts_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/community/community_screen.dart';
-import '../screens/community/new_report_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -32,8 +30,6 @@ abstract final class AppRoutes {
   static const map = '/map';
   static const alerts = '/alerts';
   static const score = '/score';
-  static const community = '/community';
-  static const communityNewReport = '/community/new-report';
   static const profile = '/home/profile';
 }
 
@@ -189,23 +185,6 @@ GoRouter createRouter({
                   environmentalRepository: envRepo,
                   locationResolver: unifiedResolver,
                 ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.community,
-                name: 'community',
-                builder: (context, state) => const CommunityScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'new-report',
-                    name: 'community-new-report',
-                    parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => const NewReportScreen(),
-                  ),
-                ],
               ),
             ],
           ),
