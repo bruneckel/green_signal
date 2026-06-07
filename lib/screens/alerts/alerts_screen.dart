@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/alert_strings.dart';
+import '../../core/utils/form_utils.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -85,8 +86,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
     });
 
     if (result.inmetHasError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AlertStrings.inmetLoadError)),
+      showAppSnackBar(
+        context,
+        AlertStrings.inmetLoadError,
+        type: AppSnackBarType.error,
       );
     }
   }

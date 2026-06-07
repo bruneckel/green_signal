@@ -123,11 +123,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           if (!mounted) return;
 
-          showAppSnackBar(context, AppStrings.registerSuccess);
+          showAppSnackBar(
+            context,
+            AppStrings.registerSuccess,
+            type: AppSnackBarType.success,
+          );
           context.go(AppRoutes.login);
         } on EmailAlreadyRegisteredException {
           if (!mounted) return;
-          showAppSnackBar(context, AppStrings.emailAlreadyRegistered);
+          showAppSnackBar(
+            context,
+            AppStrings.emailAlreadyRegistered,
+            type: AppSnackBarType.error,
+          );
         }
       },
     );

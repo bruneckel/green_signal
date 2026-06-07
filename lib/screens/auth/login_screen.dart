@@ -52,7 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        showAppSnackBar(context, AppStrings.loginSuccess);
+        showAppSnackBar(
+          context,
+          AppStrings.loginSuccess,
+          type: AppSnackBarType.success,
+        );
         context.go(AppRoutes.home);
       },
     );
@@ -63,7 +67,11 @@ class _LoginScreenState extends State<LoginScreen> {
       await _submit();
     } on InvalidCredentialsException {
       if (!mounted) return;
-      showAppSnackBar(context, AppStrings.invalidCredentials);
+      showAppSnackBar(
+        context,
+        AppStrings.invalidCredentials,
+        type: AppSnackBarType.error,
+      );
     }
   }
 

@@ -157,7 +157,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (!mounted) return;
 
-        showAppSnackBar(context, ProfileStrings.saveSuccess);
+        showAppSnackBar(
+          context,
+          ProfileStrings.saveSuccess,
+          type: AppSnackBarType.success,
+        );
         context.pop();
       },
     );

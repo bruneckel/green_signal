@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
+enum AppSnackBarType { success, error, info }
+
 void unfocus(BuildContext context) {
   FocusManager.instance.primaryFocus?.unfocus();
 }
@@ -11,10 +15,25 @@ void focusNext(BuildContext context, FocusNode node) {
 String? optionalTrim(String value) =>
     value.trim().isEmpty ? null : value.trim();
 
-void showAppSnackBar(BuildContext context, String message) {
+void showAppSnackBar(
+  BuildContext context,
+  String message, {
+  AppSnackBarType type = AppSnackBarType.info,
+}) {
+  final backgroundColor = switch (type) {
+    AppSnackBarType.success => AppColors.primaryDark,
+    AppSnackBarType.error => AppColors.riskHigh,
+    AppSnackBarType.info => AppColors.textPrimary,
+  };
+
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+    ..showSnackBar(
+      SnackBar(
+        backgroundColor: backgroundColor,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+      ),
+    );
 }
 
 class ValidatedFormController {

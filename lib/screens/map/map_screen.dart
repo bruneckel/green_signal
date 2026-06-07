@@ -5,6 +5,7 @@ import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/map_config.dart';
+import '../../core/utils/form_utils.dart';
 import '../../core/constants/map_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -157,13 +158,13 @@ class _MapScreenState extends State<MapScreen> {
     });
 
     if (result.hasError && !result.isStale && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(MapStrings.loadError)),
+      showAppSnackBar(
+        context,
+        MapStrings.loadError,
+        type: AppSnackBarType.error,
       );
     } else if (result.isStale && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(MapStrings.staleDataNotice)),
-      );
+      showAppSnackBar(context, MapStrings.staleDataNotice);
     }
   }
 

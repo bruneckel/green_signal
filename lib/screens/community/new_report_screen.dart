@@ -53,7 +53,11 @@ class _NewReportScreenState extends State<NewReportScreen> {
 
     if (!_formKey.currentState!.validate() || !categoryValid) return;
 
-    showAppSnackBar(context, CommunityStrings.reportSuccess);
+    showAppSnackBar(
+      context,
+      CommunityStrings.reportSuccess,
+      type: AppSnackBarType.success,
+    );
     context.pop();
   }
 
