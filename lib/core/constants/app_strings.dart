@@ -14,6 +14,13 @@ abstract final class AppStrings {
   static const password = 'Senha';
   static const confirmPassword = 'Confirme a senha';
   static const fullName = 'Nome Completo';
+  static const cep = 'CEP';
+  static const street = 'Rua';
+  static const number = 'Número';
+  static const complement = 'Complemento';
+  static const neighborhood = 'Bairro';
+  static const city = 'Cidade';
+  static const state = 'Estado';
   static const address = 'Endereço';
   static const phone = 'Telefone';
 
@@ -27,6 +34,7 @@ abstract final class AppStrings {
   static const registerSuccess = 'Cadastro realizado com sucesso!';
   static const emailAlreadyRegistered = 'Este e-mail já está cadastrado.';
   static const invalidCredentials = 'E-mail ou senha incorretos.';
+  static const cepNotFound = 'CEP não encontrado.';
   static const featureComingSoon = 'Funcionalidade em breve.';
 
   static const profile = 'Perfil';

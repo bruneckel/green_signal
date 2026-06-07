@@ -63,7 +63,10 @@ class _ScoreScreenState extends State<ScoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final data = _data ?? NeighborhoodScoreData.mock;
+    final user = widget.authRepository.currentUser;
+    final neighborhood =
+        _data?.neighborhood ?? user?.neighborhood ?? ScoreStrings.loadingLabel;
+    final city = _data?.city ?? user?.profileLabel ?? '';
 
     return ColoredBox(
       color: AppColors.background,
@@ -98,17 +101,20 @@ class _ScoreScreenState extends State<ScoreScreen> {
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          TextSpan(text: data.neighborhood),
+                          TextSpan(text: neighborhood),
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      data.city,
-                      style: AppTypography.bodySecondary.copyWith(fontSize: 14),
-                    ),
+                    if (city.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        city,
+                        style:
+                            AppTypography.bodySecondary.copyWith(fontSize: 14),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
-                    if (_isLoading)
+                    if (_isLoading || _data == null)
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(AppSpacing.xxl),
@@ -117,8 +123,8 @@ class _ScoreScreenState extends State<ScoreScreen> {
                       )
                     else ...[
                       RiskScoreCard(
-                        riskScore: data.riskScore,
-                        riskLevel: data.riskLevel,
+                        riskScore: _data!.riskScore,
+                        riskLevel: _data!.riskLevel,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       const Text(
@@ -127,7 +133,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       EnvironmentalIndicatorsList(
-                        indicators: data.indicators,
+                        indicators: _data!.indicators,
                       ),
                     ],
                   ],

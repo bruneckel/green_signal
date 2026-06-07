@@ -12,7 +12,7 @@ import '../../core/theme/app_typography.dart';
 import '../../models/inpe_hotspot_point.dart';
 import '../../models/map_layer_data.dart';
 import '../../services/auth/auth_repository.dart';
-import '../../services/environment/map_location_resolver.dart';
+import '../../services/environment/unified_location_resolver.dart';
 import '../../services/map/map_grid_sampler.dart';
 import '../../services/map/map_repository.dart';
 import '../../widgets/map/environmental_map_view.dart';
@@ -24,12 +24,12 @@ class MapScreen extends StatefulWidget {
     super.key,
     this.repository,
     required this.authRepository,
-    required this.mapLocationResolver,
+    required this.locationResolver,
   });
 
   final MapRepository? repository;
   final AuthRepository authRepository;
-  final MapLocationResolver mapLocationResolver;
+  final UnifiedLocationResolver locationResolver;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -67,14 +67,14 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _resolveMapCenter() async {
-    final result = await widget.mapLocationResolver.resolve(
+    final result = await widget.locationResolver.resolveWithMeta(
       widget.authRepository,
     );
 
     if (!mounted) return;
 
     setState(() {
-      _mapCenter = result.position;
+      _mapCenter = result.location.position;
       _isLocating = false;
     });
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme/app_colors.dart';
 
@@ -18,6 +19,10 @@ class AppTextField extends StatefulWidget {
     this.validator,
     this.maxLines = 1,
     this.minLines,
+    this.enabled = true,
+    this.readOnly = false,
+    this.inputFormatters,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
@@ -33,6 +38,10 @@ class AppTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final int? maxLines;
   final int? minLines;
+  final bool enabled;
+  final bool readOnly;
+  final List<TextInputFormatter>? inputFormatters;
+  final Widget? suffixIcon;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -61,6 +70,9 @@ class _AppTextFieldState extends State<AppTextField> {
       validator: widget.validator,
       maxLines: widget.maxLines,
       minLines: widget.minLines,
+      enabled: widget.enabled,
+      readOnly: widget.readOnly,
+      inputFormatters: widget.inputFormatters,
       decoration: InputDecoration(
         hintText: widget.hintText,
         prefixIcon: widget.prefixIcon != null
@@ -79,7 +91,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   setState(() => _obscureText = !_obscureText);
                 },
               )
-            : null,
+            : widget.suffixIcon,
       ),
     );
   }

@@ -12,9 +12,15 @@ abstract class AuthRepository extends ChangeNotifier {
   Future<void> register({
     required String name,
     required String email,
-    required String address,
     required String phone,
     required String password,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
   });
 
   Future<void> login({

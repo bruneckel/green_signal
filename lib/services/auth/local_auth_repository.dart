@@ -3,13 +3,19 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/user_account.dart';
+import '../environment/geocoding_client.dart';
 import 'auth_exceptions.dart';
 import 'auth_repository.dart';
 import 'password_hasher.dart';
 
 class LocalAuthRepository extends AuthRepository {
+  LocalAuthRepository({GeocodingClient? geocodingClient})
+      : _geocodingClient = geocodingClient ?? GeocodingClient();
+
   static const _usersKey = 'auth_users';
   static const _sessionEmailKey = 'auth_session_email';
+
+  final GeocodingClient _geocodingClient;
 
   List<UserAccount> _users = [];
   UserAccount? _currentUser;
@@ -42,9 +48,15 @@ class LocalAuthRepository extends AuthRepository {
   Future<void> register({
     required String name,
     required String email,
-    required String address,
     required String phone,
     required String password,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
 
@@ -52,12 +64,24 @@ class LocalAuthRepository extends AuthRepository {
       throw EmailAlreadyRegisteredException();
     }
 
+    final formattedAddress =
+        '$street, $number, $neighborhood, $city - $state, Brasil';
+    final geocoded = await _geocodingClient.resolve(formattedAddress);
+
     final user = UserAccount(
       name: name.trim(),
       email: normalizedEmail,
-      address: address.trim(),
       phone: phone.trim(),
       passwordHash: hashPassword(password),
+      cep: cep.replaceAll(RegExp(r'\D'), ''),
+      street: street.trim(),
+      number: number.trim(),
+      complement: complement?.trim(),
+      neighborhood: neighborhood.trim(),
+      city: city.trim(),
+      state: state.trim(),
+      latitude: geocoded.position.latitude,
+      longitude: geocoded.position.longitude,
     );
 
     _users = [..._users, user];
@@ -104,4 +128,6 @@ class LocalAuthRepository extends AuthRepository {
     final encoded = jsonEncode(_users.map((user) => user.toJson()).toList());
     await prefs.setString(_usersKey, encoded);
   }
+
+  void dispose() => _geocodingClient.dispose();
 }

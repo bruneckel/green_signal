@@ -10,11 +10,12 @@ import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../services/address/viacep_client.dart';
 import '../services/auth/auth_repository.dart';
 import '../services/environment/device_location_service.dart';
 import '../services/environment/environmental_repository.dart';
-import '../services/environment/location_resolver.dart';
-import '../services/environment/map_location_resolver.dart';
+import '../services/environment/geocoding_client.dart';
+import '../services/environment/unified_location_resolver.dart';
 import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
@@ -35,18 +36,18 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 GoRouter createRouter({
   MapRepository? mapRepository,
   EnvironmentalRepository? environmentalRepository,
-  LocationResolver? locationResolver,
-  MapLocationResolver? mapLocationResolver,
+  UnifiedLocationResolver? locationResolver,
+  ViaCepClient? viaCepClient,
   required AuthRepository authRepository,
 }) {
   final mapRepo = mapRepository ?? LiveMapRepository();
   final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
-  final resolvedLocation = locationResolver ?? GeocodingLocationResolver();
-  final mapLocResolver = mapLocationResolver ??
-      MapLocationResolver(
+  final unifiedResolver = locationResolver ??
+      UnifiedLocationResolver(
         deviceLocation: const GeolocatorDeviceLocationService(),
-        addressResolver: resolvedLocation,
+        geocodingClient: GeocodingClient(),
       );
+  final cepClient = viaCepClient ?? LiveViaCepClient();
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -86,8 +87,7 @@ GoRouter createRouter({
           authRepository: authRepository,
           mapRepository: mapRepo,
           environmentalRepository: envRepo,
-          locationResolver: resolvedLocation,
-          mapLocationResolver: mapLocResolver,
+          locationResolver: unifiedResolver,
         ),
       ),
       GoRoute(
@@ -95,6 +95,7 @@ GoRouter createRouter({
         name: 'register',
         builder: (context, state) => RegisterScreen(
           authRepository: authRepository,
+          viaCepClient: cepClient,
         ),
       ),
       StatefulShellRoute.indexedStack(
@@ -113,7 +114,7 @@ GoRouter createRouter({
                 builder: (context, state) => HomeScreen(
                   authRepository: authRepository,
                   environmentalRepository: envRepo,
-                  locationResolver: resolvedLocation,
+                  locationResolver: unifiedResolver,
                 ),
               ),
             ],
@@ -126,7 +127,7 @@ GoRouter createRouter({
                 builder: (context, state) => MapScreen(
                   repository: mapRepo,
                   authRepository: authRepository,
-                  mapLocationResolver: mapLocResolver,
+                  locationResolver: unifiedResolver,
                 ),
               ),
             ],
@@ -148,7 +149,7 @@ GoRouter createRouter({
                 builder: (context, state) => ScoreScreen(
                   authRepository: authRepository,
                   environmentalRepository: envRepo,
-                  locationResolver: resolvedLocation,
+                  locationResolver: unifiedResolver,
                 ),
               ),
             ],

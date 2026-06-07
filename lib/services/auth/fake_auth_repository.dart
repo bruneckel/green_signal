@@ -5,20 +5,27 @@ import 'password_hasher.dart';
 
 class FakeAuthRepository extends AuthRepository {
   FakeAuthRepository({this.startLoggedIn = false}) {
-    _users = [
-      UserAccount(
-        name: 'Test User',
-        email: 'user@example.com',
-        address: 'Rua Teste, 123',
-        phone: '11999999999',
-        passwordHash: hashPassword('123456'),
-      ),
-    ];
+    _users = [testUser];
 
     if (startLoggedIn) {
       _currentUser = _users.first;
     }
   }
+
+  static final testUser = UserAccount(
+    name: 'Test User',
+    email: 'user@example.com',
+    phone: '11999999999',
+    passwordHash: hashPassword('123456'),
+    cep: '05435000',
+    street: 'Rua Teste',
+    number: '123',
+    neighborhood: 'Vila Madalena',
+    city: 'São Paulo',
+    state: 'SP',
+    latitude: -23.5505,
+    longitude: -46.6333,
+  );
 
   final bool startLoggedIn;
 
@@ -38,9 +45,15 @@ class FakeAuthRepository extends AuthRepository {
   Future<void> register({
     required String name,
     required String email,
-    required String address,
     required String phone,
     required String password,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
 
@@ -53,9 +66,17 @@ class FakeAuthRepository extends AuthRepository {
       UserAccount(
         name: name.trim(),
         email: normalizedEmail,
-        address: address.trim(),
         phone: phone.trim(),
         passwordHash: hashPassword(password),
+        cep: cep.replaceAll(RegExp(r'\D'), ''),
+        street: street.trim(),
+        number: number.trim(),
+        complement: complement?.trim(),
+        neighborhood: neighborhood.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        latitude: -25.5128666,
+        longitude: -54.5556132,
       ),
     ];
   }

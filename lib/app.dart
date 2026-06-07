@@ -3,11 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'router/app_router.dart';
+import 'services/address/viacep_client.dart';
 import 'services/auth/auth_repository.dart';
 import 'services/environment/device_location_service.dart';
 import 'services/environment/environmental_repository.dart';
-import 'services/environment/location_resolver.dart';
-import 'services/environment/map_location_resolver.dart';
+import 'services/environment/geocoding_client.dart';
+import 'services/environment/unified_location_resolver.dart';
 import 'services/map/map_repository.dart';
 
 class GreenSignalApp extends StatelessWidget {
@@ -15,34 +16,34 @@ class GreenSignalApp extends StatelessWidget {
     required AuthRepository authRepository,
     MapRepository? mapRepository,
     EnvironmentalRepository? environmentalRepository,
-    LocationResolver? locationResolver,
-    MapLocationResolver? mapLocationResolver,
+    UnifiedLocationResolver? locationResolver,
     DeviceLocationService? deviceLocationService,
+    ViaCepClient? viaCepClient,
   }) {
     final mapRepo = mapRepository ?? LiveMapRepository();
     final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
-    final addressResolver = locationResolver ?? GeocodingLocationResolver();
     final deviceLocation =
         deviceLocationService ?? const GeolocatorDeviceLocationService();
-    final mapLocResolver = mapLocationResolver ??
-        MapLocationResolver(
+    final unifiedResolver = locationResolver ??
+        UnifiedLocationResolver(
           deviceLocation: deviceLocation,
-          addressResolver: addressResolver,
+          geocodingClient: GeocodingClient(),
         );
+    final cepClient = viaCepClient ?? LiveViaCepClient();
 
     return GreenSignalApp._(
       authRepository: authRepository,
       mapRepository: mapRepo,
       environmentalRepository: envRepo,
-      locationResolver: addressResolver,
+      locationResolver: unifiedResolver,
       deviceLocationService: deviceLocation,
-      mapLocationResolver: mapLocResolver,
+      viaCepClient: cepClient,
       router: createRouter(
         authRepository: authRepository,
         mapRepository: mapRepo,
         environmentalRepository: envRepo,
-        locationResolver: addressResolver,
-        mapLocationResolver: mapLocResolver,
+        locationResolver: unifiedResolver,
+        viaCepClient: cepClient,
       ),
     );
   }
@@ -53,16 +54,16 @@ class GreenSignalApp extends StatelessWidget {
     required this.environmentalRepository,
     required this.locationResolver,
     required this.deviceLocationService,
-    required this.mapLocationResolver,
+    required this.viaCepClient,
     required GoRouter router,
   }) : _router = router;
 
   final AuthRepository authRepository;
   final MapRepository mapRepository;
   final EnvironmentalRepository environmentalRepository;
-  final LocationResolver locationResolver;
+  final UnifiedLocationResolver locationResolver;
   final DeviceLocationService deviceLocationService;
-  final MapLocationResolver mapLocationResolver;
+  final ViaCepClient viaCepClient;
   final GoRouter _router;
 
   @override

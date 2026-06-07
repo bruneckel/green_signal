@@ -8,12 +8,12 @@ import 'package:green_signal/core/constants/community_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
+import 'package:green_signal/services/address/viacep_client.dart';
 import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
 import 'package:green_signal/services/environment/device_location_service.dart';
 import 'package:green_signal/services/environment/environmental_repository.dart';
-import 'package:green_signal/services/environment/location_resolver.dart';
-import 'package:green_signal/services/environment/map_location_resolver.dart';
+import 'package:green_signal/services/environment/unified_location_resolver.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -36,34 +36,37 @@ FakeEnvironmentalRepository _fakeEnvironmentalRepository({
   return FakeEnvironmentalRepository(delay: delay);
 }
 
-const _fakeLocationResolver = FakeLocationResolver();
-
 const _fakeDeviceLocationService = FakeDeviceLocationService();
+
+UnifiedLocationResolver _fakeUnifiedLocationResolver({
+  DeviceLocationService? deviceLocation,
+}) {
+  return UnifiedLocationResolver(
+    deviceLocation: deviceLocation ?? _fakeDeviceLocationService,
+  );
+}
+
+const _fakeViaCepClient = FakeViaCepClient(result: FakeViaCepClient.fozSample);
 
 Widget _buildApp({
   MapRepository? mapRepository,
   AuthRepository? authRepository,
   EnvironmentalRepository? environmentalRepository,
-  LocationResolver? locationResolver,
-  MapLocationResolver? mapLocationResolver,
+  UnifiedLocationResolver? locationResolver,
   DeviceLocationService? deviceLocationService,
+  ViaCepClient? viaCepClient,
 }) {
-  final addressResolver = locationResolver ?? _fakeLocationResolver;
-  final deviceLocation = deviceLocationService ?? _fakeDeviceLocationService;
-  final mapLocResolver = mapLocationResolver ??
-      MapLocationResolver(
-        deviceLocation: deviceLocation,
-        addressResolver: addressResolver,
-      );
-
   return GreenSignalApp(
     mapRepository: mapRepository ?? _fakeMapRepository(),
     authRepository: authRepository ?? _fakeAuthRepository(),
     environmentalRepository:
         environmentalRepository ?? _fakeEnvironmentalRepository(),
-    locationResolver: addressResolver,
-    deviceLocationService: deviceLocation,
-    mapLocationResolver: mapLocResolver,
+    locationResolver: locationResolver ??
+        _fakeUnifiedLocationResolver(
+          deviceLocation: deviceLocationService,
+        ),
+    deviceLocationService: deviceLocationService ?? _fakeDeviceLocationService,
+    viaCepClient: viaCepClient ?? _fakeViaCepClient,
   );
 }
 
@@ -72,12 +75,14 @@ Future<void> _goToLogin(
   MapRepository? mapRepository,
   AuthRepository? authRepository,
   DeviceLocationService? deviceLocationService,
+  ViaCepClient? viaCepClient,
 }) async {
   await tester.pumpWidget(
     _buildApp(
       mapRepository: mapRepository,
       authRepository: authRepository,
       deviceLocationService: deviceLocationService,
+      viaCepClient: viaCepClient,
     ),
   );
   await tester.pump();
@@ -180,10 +185,14 @@ void main() {
       find.byType(TextFormField).at(1),
       'novo@example.com',
     );
-    await tester.enterText(find.byType(TextFormField).at(2), 'Rua Nova, 10');
-    await tester.enterText(find.byType(TextFormField).at(3), '11988887777');
-    await tester.enterText(find.byType(TextFormField).at(4), '123456');
-    await tester.enterText(find.byType(TextFormField).at(5), '123456');
+    await tester.enterText(find.byType(TextFormField).at(2), '85862350');
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(4), '100');
+    await tester.enterText(find.byType(TextFormField).at(9), '11988887777');
+    await tester.enterText(find.byType(TextFormField).at(10), '123456');
+    await tester.enterText(find.byType(TextFormField).at(11), '123456');
 
     await tester.ensureVisible(find.text(AppStrings.register));
     await tester.tap(find.text(AppStrings.register));

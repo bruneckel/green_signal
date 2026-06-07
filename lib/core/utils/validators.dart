@@ -36,4 +36,14 @@ class Validators {
     }
     return null;
   }
+
+  static String? cep(String? value) {
+    final requiredError = required(value, fieldName: 'CEP');
+    if (requiredError != null) return requiredError;
+    final digits = value!.replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 8) {
+      return 'CEP inválido';
+    }
+    return null;
+  }
 }

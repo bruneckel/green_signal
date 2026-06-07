@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'services/address/viacep_client.dart';
 import 'services/auth/local_auth_repository.dart';
 import 'services/environment/device_location_service.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
-import 'services/environment/location_resolver.dart';
-import 'services/environment/map_location_resolver.dart';
+import 'services/environment/unified_location_resolver.dart';
 import 'services/map/inpe_focos_client.dart';
 import 'services/map/map_repository.dart';
 import 'services/map/open_meteo_client.dart';
@@ -14,7 +14,8 @@ import 'services/map/open_meteo_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authRepository = LocalAuthRepository();
+  final geocodingClient = GeocodingClient();
+  final authRepository = LocalAuthRepository(geocodingClient: geocodingClient);
   await authRepository.initialize();
 
   final openMeteoClient = OpenMeteoClient();
@@ -27,14 +28,12 @@ Future<void> main() async {
     openMeteoClient: openMeteoClient,
     inpeFocosClient: inpeFocosClient,
   );
-  final locationResolver = GeocodingLocationResolver(
-    geocodingClient: GeocodingClient(),
-  );
   const deviceLocationService = GeolocatorDeviceLocationService();
-  final mapLocationResolver = MapLocationResolver(
+  final locationResolver = UnifiedLocationResolver(
     deviceLocation: deviceLocationService,
-    addressResolver: locationResolver,
+    geocodingClient: geocodingClient,
   );
+  final viaCepClient = LiveViaCepClient();
 
   runApp(
     GreenSignalApp(
@@ -43,7 +42,7 @@ Future<void> main() async {
       environmentalRepository: environmentalRepository,
       locationResolver: locationResolver,
       deviceLocationService: deviceLocationService,
-      mapLocationResolver: mapLocationResolver,
+      viaCepClient: viaCepClient,
     ),
   );
 }

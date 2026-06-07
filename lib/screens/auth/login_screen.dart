@@ -12,8 +12,7 @@ import '../../router/app_router.dart';
 import '../../services/auth/auth_exceptions.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
-import '../../services/environment/location_resolver.dart';
-import '../../services/environment/map_location_resolver.dart';
+import '../../services/environment/unified_location_resolver.dart';
 import '../../services/map/map_grid_sampler.dart';
 import '../../services/map/map_repository.dart';
 import '../../widgets/app_text_field.dart';
@@ -28,14 +27,12 @@ class LoginScreen extends StatefulWidget {
     this.mapRepository,
     this.environmentalRepository,
     this.locationResolver,
-    this.mapLocationResolver,
   });
 
   final AuthRepository authRepository;
   final MapRepository? mapRepository;
   final EnvironmentalRepository? environmentalRepository;
-  final LocationResolver? locationResolver;
-  final MapLocationResolver? mapLocationResolver;
+  final UnifiedLocationResolver? locationResolver;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -98,11 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final envRepo = widget.environmentalRepository;
     final mapRepo = widget.mapRepository;
     final locationResolver = widget.locationResolver;
-    final mapLocationResolver = widget.mapLocationResolver;
-    if (envRepo == null ||
-        mapRepo == null ||
-        locationResolver == null ||
-        mapLocationResolver == null) {
+    if (envRepo == null || mapRepo == null || locationResolver == null) {
       return;
     }
 
@@ -115,14 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      final mapLocation = await mapLocationResolver.resolve(
-        widget.authRepository,
-      );
       unawaited(
         mapRepo.fetchLayer(
           layer: MapLayer.airQuality,
           bounds: LatLngBounds.fromCenterZoom(
-            mapLocation.position,
+            location.position,
             MapLayerData.initialZoom,
           ),
           zoom: MapLayerData.initialZoom,
