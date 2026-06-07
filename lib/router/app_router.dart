@@ -5,6 +5,7 @@ import '../core/constants/home_strings.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/map/map_screen.dart';
 import '../screens/shared/placeholder_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../shell/main_shell.dart';
@@ -62,9 +63,7 @@ GoRouter createRouter() {
               GoRoute(
                 path: AppRoutes.map,
                 name: 'map',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: HomeStrings.navMap,
-                ),
+                builder: (context, state) => const MapScreen(),
               ),
             ],
           ),
