@@ -6,13 +6,17 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/form_utils.dart';
 import '../../core/utils/validators.dart';
 import '../../router/app_router.dart';
+import '../../services/auth/auth_exceptions.dart';
+import '../../services/auth/auth_repository.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_footer_link.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, required this.authRepository});
+
+  final AuthRepository authRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,6 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
 
+  bool _attemptedSubmit = false;
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -34,11 +41,32 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     unfocus(context);
+    setState(() => _attemptedSubmit = true);
+
     if (!_formKey.currentState!.validate()) return;
 
-    context.go(AppRoutes.home);
+    setState(() => _isLoading = true);
+
+    try {
+      await widget.authRepository.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      showAppSnackBar(context, AppStrings.loginSuccess);
+      context.go(AppRoutes.home);
+    } on InvalidCredentialsException {
+      if (!mounted) return;
+      showAppSnackBar(context, AppStrings.invalidCredentials);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _forgotPassword() {
@@ -54,7 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
       centerContent: true,
       child: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode: _attemptedSubmit
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
         child: Column(
           children: [
             AppTextField(
@@ -91,7 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               label: AppStrings.login,
-              onPressed: _submit,
+              onPressed: _isLoading ? null : _submit,
+              isLoading: _isLoading,
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthFooterLink(

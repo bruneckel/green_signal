@@ -25,6 +25,8 @@ abstract final class AppStrings {
 
   static const loginSuccess = 'Login realizado com sucesso!';
   static const registerSuccess = 'Cadastro realizado com sucesso!';
+  static const emailAlreadyRegistered = 'Este e-mail já está cadastrado.';
+  static const invalidCredentials = 'E-mail ou senha incorretos.';
   static const featureComingSoon = 'Funcionalidade em breve.';
 
   static const profile = 'Perfil';

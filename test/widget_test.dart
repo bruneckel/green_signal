@@ -8,6 +8,8 @@ import 'package:green_signal/core/constants/community_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
+import 'package:green_signal/services/auth/auth_repository.dart';
+import 'package:green_signal/services/auth/fake_auth_repository.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -20,16 +22,46 @@ FakeMapRepository _fakeMapRepository({
   );
 }
 
-Future<void> _loginAndGoHome(
+FakeAuthRepository _fakeAuthRepository({bool startLoggedIn = false}) {
+  return FakeAuthRepository(startLoggedIn: startLoggedIn);
+}
+
+Widget _buildApp({
+  MapRepository? mapRepository,
+  AuthRepository? authRepository,
+}) {
+  return GreenSignalApp(
+    mapRepository: mapRepository ?? _fakeMapRepository(),
+    authRepository: authRepository ?? _fakeAuthRepository(),
+  );
+}
+
+Future<void> _goToLogin(
   WidgetTester tester, {
   MapRepository? mapRepository,
+  AuthRepository? authRepository,
 }) async {
   await tester.pumpWidget(
-    GreenSignalApp(mapRepository: mapRepository ?? _fakeMapRepository()),
+    _buildApp(
+      mapRepository: mapRepository,
+      authRepository: authRepository,
+    ),
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 2500));
   await tester.pumpAndSettle();
+}
+
+Future<void> _loginAndGoHome(
+  WidgetTester tester, {
+  MapRepository? mapRepository,
+  AuthRepository? authRepository,
+}) async {
+  await _goToLogin(
+    tester,
+    mapRepository: mapRepository,
+    authRepository: authRepository,
+  );
 
   await tester.enterText(
     find.byType(TextFormField).at(0),
@@ -42,7 +74,7 @@ Future<void> _loginAndGoHome(
 
 void main() {
   testWidgets('Splash screen shows branding', (WidgetTester tester) async {
-    await tester.pumpWidget(GreenSignalApp());
+    await tester.pumpWidget(_buildApp());
     await tester.pump();
 
     expect(find.text(AppStrings.appName), findsOneWidget);
@@ -50,7 +82,7 @@ void main() {
   });
 
   testWidgets('Splash navigates to login after delay', (WidgetTester tester) async {
-    await tester.pumpWidget(GreenSignalApp());
+    await tester.pumpWidget(_buildApp());
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 2500));
@@ -60,16 +92,108 @@ void main() {
   });
 
   testWidgets('Login navigates to register', (WidgetTester tester) async {
-    await tester.pumpWidget(GreenSignalApp());
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 2500));
-    await tester.pumpAndSettle();
+    await _goToLogin(tester);
 
     await tester.tap(find.text(AppStrings.signUp));
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.registerTitle), findsOneWidget);
+  });
+
+  testWidgets('Login shows validation errors only after submit', (
+    WidgetTester tester,
+  ) async {
+    await _goToLogin(tester);
+
+    await tester.tap(find.byType(TextFormField).first);
+    await tester.pump();
+
+    expect(find.text('E-mail é obrigatório'), findsNothing);
+
+    await tester.tap(find.text(AppStrings.login));
+    await tester.pump();
+
+    expect(find.text('E-mail é obrigatório'), findsOneWidget);
+  });
+
+  testWidgets('Login shows error for invalid credentials', (
+    WidgetTester tester,
+  ) async {
+    await _goToLogin(tester);
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'user@example.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'wrongpass');
+    await tester.tap(find.text(AppStrings.login));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.invalidCredentials), findsOneWidget);
+  });
+
+  testWidgets('Register saves user and returns to login', (
+    WidgetTester tester,
+  ) async {
+    await _goToLogin(tester);
+
+    await tester.tap(find.text(AppStrings.signUp));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Novo Usuario');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'novo@example.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(2), 'Rua Nova, 10');
+    await tester.enterText(find.byType(TextFormField).at(3), '11988887777');
+    await tester.enterText(find.byType(TextFormField).at(4), '123456');
+    await tester.enterText(find.byType(TextFormField).at(5), '123456');
+
+    await tester.ensureVisible(find.text(AppStrings.register));
+    await tester.tap(find.text(AppStrings.register));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.registerSuccess), findsOneWidget);
+    expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'novo@example.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), '123456');
+    await tester.tap(find.text(AppStrings.login));
+    await tester.pumpAndSettle();
+
+    expect(find.text('83'), findsOneWidget);
+  });
+
+  testWidgets('Persisted session skips login on splash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildApp(authRepository: _fakeAuthRepository(startLoggedIn: true)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 2500));
+    await tester.pumpAndSettle();
+
+    expect(find.text('83'), findsOneWidget);
+    expect(find.text(AppStrings.welcomeTitle), findsNothing);
+  });
+
+  testWidgets('Logout clears session and returns to login', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AppStrings.logout));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
   });
 
   testWidgets('Login navigates to home after valid submit', (
@@ -166,6 +290,7 @@ void main() {
   ) async {
     await _loginAndGoHome(tester);
 
+    await tester.ensureVisible(find.text(HomeStrings.viewAll).first);
     await tester.tap(find.text(HomeStrings.viewAll).first);
     await tester.pumpAndSettle();
 

@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../screens/alerts/alerts_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/map/map_screen.dart';
 import '../screens/community/community_screen.dart';
 import '../screens/community/new_report_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/map/map_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../services/auth/auth_repository.dart';
 import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
@@ -27,30 +28,61 @@ abstract final class AppRoutes {
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
-GoRouter createRouter({MapRepository? mapRepository}) {
+GoRouter createRouter({
+  MapRepository? mapRepository,
+  required AuthRepository authRepository,
+}) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
+    refreshListenable: authRepository,
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+      final isSplash = location == AppRoutes.splash;
+      final isLogin = location == AppRoutes.login;
+      final isRegister = location == AppRoutes.register;
+
+      if (isSplash) return null;
+
+      if (!authRepository.isLoggedIn && !isLogin && !isRegister) {
+        return AppRoutes.login;
+      }
+
+      if (authRepository.isLoggedIn && (isLogin || isRegister)) {
+        return AppRoutes.home;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.splash,
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) => SplashScreen(
+          authRepository: authRepository,
+        ),
       ),
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => LoginScreen(
+          authRepository: authRepository,
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,
         name: 'register',
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => RegisterScreen(
+          authRepository: authRepository,
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return MainShell(navigationShell: navigationShell);
+          return MainShell(
+            navigationShell: navigationShell,
+            authRepository: authRepository,
+          );
         },
         branches: [
           StatefulShellBranch(

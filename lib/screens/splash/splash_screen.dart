@@ -8,10 +8,13 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../router/app_router.dart';
+import '../../services/auth/auth_repository.dart';
 import '../../widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, required this.authRepository});
+
+  final AuthRepository authRepository;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -26,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(_splashDuration, _goToLogin);
+    _timer = Timer(_splashDuration, _navigateFromSplash);
   }
 
   @override
@@ -35,16 +38,21 @@ class _SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
-  void _goToLogin() {
+  void _navigateFromSplash() {
     if (_navigated || !mounted) return;
     _navigated = true;
-    context.go(AppRoutes.login);
+
+    if (widget.authRepository.isLoggedIn) {
+      context.go(AppRoutes.home);
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _goToLogin,
+      onTap: _navigateFromSplash,
       behavior: HitTestBehavior.opaque,
       child: Scaffold(
         backgroundColor: AppColors.background,

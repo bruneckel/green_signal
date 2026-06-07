@@ -5,12 +5,17 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/form_utils.dart';
 import '../../core/utils/validators.dart';
+import '../../router/app_router.dart';
+import '../../services/auth/auth_exceptions.dart';
+import '../../services/auth/auth_repository.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/primary_button.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, required this.authRepository});
+
+  final AuthRepository authRepository;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -32,6 +37,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
 
+  bool _attemptedSubmit = false;
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -49,12 +57,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     unfocus(context);
+    setState(() => _attemptedSubmit = true);
+
     if (!_formKey.currentState!.validate()) return;
 
-    showAppSnackBar(context, AppStrings.registerSuccess);
-    context.pop();
+    setState(() => _isLoading = true);
+
+    try {
+      await widget.authRepository.register(
+        name: _nameController.text,
+        email: _emailController.text,
+        address: _addressController.text,
+        phone: _phoneController.text,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      showAppSnackBar(context, AppStrings.registerSuccess);
+      context.go(AppRoutes.login);
+    } on EmailAlreadyRegisteredException {
+      if (!mounted) return;
+      showAppSnackBar(context, AppStrings.emailAlreadyRegistered);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _focusNext(FocusNode node) {
@@ -69,7 +100,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       onBack: () => context.pop(),
       child: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode: _attemptedSubmit
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
         child: Column(
           children: [
             AppTextField(
@@ -151,7 +184,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: AppStrings.register,
-              onPressed: _submit,
+              onPressed: _isLoading ? null : _submit,
+              isLoading: _isLoading,
             ),
             const SizedBox(height: AppSpacing.lg),
           ],

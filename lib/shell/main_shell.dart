@@ -4,12 +4,18 @@ import 'package:go_router/go_router.dart';
 import '../core/constants/home_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../services/auth/auth_repository.dart';
 import '../widgets/shell/app_drawer.dart';
 
 class MainShell extends StatelessWidget {
-  const MainShell({super.key, required this.navigationShell});
+  const MainShell({
+    super.key,
+    required this.navigationShell,
+    required this.authRepository,
+  });
 
   final StatefulNavigationShell navigationShell;
+  final AuthRepository authRepository;
 
   static const _destinations = [
     _NavDestination(
@@ -49,7 +55,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(authRepository: authRepository),
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
