@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/constants/home_strings.dart';
+import '../screens/alerts/alerts_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -75,9 +76,7 @@ GoRouter createRouter({MapRepository? mapRepository}) {
               GoRoute(
                 path: AppRoutes.alerts,
                 name: 'alerts',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: HomeStrings.navAlerts,
-                ),
+                builder: (context, state) => const AlertsScreen(),
               ),
             ],
           ),

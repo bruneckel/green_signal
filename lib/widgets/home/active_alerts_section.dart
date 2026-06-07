@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/home_strings.dart';
+import '../../router/app_router.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/form_utils.dart';
 import '../../models/home_data.dart';
 import 'alert_tile.dart';
 import 'app_section_card.dart';
@@ -31,8 +32,7 @@ class ActiveAlertsSection extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: GestureDetector(
-              onTap: () =>
-                  showAppSnackBar(context, HomeStrings.comingSoon),
+              onTap: () => context.go(AppRoutes.alerts),
               child: const Text(
                 HomeStrings.viewAll,
                 style: TextStyle(

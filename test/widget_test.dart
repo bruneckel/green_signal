@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:green_signal/app.dart';
+import 'package:green_signal/core/constants/alert_strings.dart';
 import 'package:green_signal/core/constants/app_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
@@ -127,5 +128,46 @@ void main() {
     expect(find.text(MapStrings.legendTempHigh), findsOneWidget);
     expect(find.textContaining('15°C'), findsOneWidget);
     expect(find.textContaining('35°C'), findsOneWidget);
+  });
+
+  testWidgets('Bottom nav opens alerts screen with mock data', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.text(HomeStrings.navAlerts));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
+    expect(find.text(AlertStrings.tabActive), findsOneWidget);
+    expect(find.text('Chuva intensa'), findsOneWidget);
+    expect(find.text('Calor extremo'), findsOneWidget);
+  });
+
+  testWidgets('Alerts filter switches to recent tab', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.text(HomeStrings.navAlerts));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AlertStrings.tabRecent));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vento forte'), findsOneWidget);
+    expect(find.text('Chuva intensa'), findsNothing);
+  });
+
+  testWidgets('Home view all navigates to alerts screen', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.text(HomeStrings.viewAll).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
+    expect(find.text('Chuva intensa'), findsOneWidget);
   });
 }
