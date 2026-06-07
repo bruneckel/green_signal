@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/form_utils.dart';
+import '../../core/utils/phone_input_formatter.dart';
 import '../../core/utils/validators.dart';
 import '../../router/app_router.dart';
 import '../../services/address/viacep_client.dart';
@@ -156,7 +159,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ? AutovalidateMode.onUserInteraction
             : AutovalidateMode.disabled,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              AppStrings.personalDataSection,
+              style: AppTypography.sectionTitle,
+            ),
+            const SizedBox(height: AppSpacing.md),
             AppTextField(
               controller: _nameController,
               focusNode: _nameFocusNode,
@@ -178,8 +187,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
-              onFieldSubmitted: (_) => _focusNext(_cepFocusNode),
+              onFieldSubmitted: (_) => _focusNext(_phoneFocusNode),
               validator: Validators.email,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _phoneController,
+              focusNode: _phoneFocusNode,
+              hintText: AppStrings.phone,
+              prefixIcon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(11),
+                PhoneInputFormatter(),
+              ],
+              onFieldSubmitted: (_) => _focusNext(_cepFocusNode),
+              validator: Validators.phone,
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Text(
+              AppStrings.addressSection,
+              style: AppTypography.sectionTitle,
             ),
             const SizedBox(height: AppSpacing.md),
             AddressFormFields(
@@ -197,23 +228,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               complementFocusNode: _complementFocusNode,
               neighborhoodFocusNode: _neighborhoodFocusNode,
               viaCepClient: _viaCepClient,
-              onNextAfterNeighborhood: _phoneFocusNode,
+              onNextAfterNeighborhood: _passwordFocusNode,
               onCepStateChanged: (state) {
                 setState(() => _cepResolved = state.cepResolved);
               },
             ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _phoneController,
-              focusNode: _phoneFocusNode,
-              hintText: AppStrings.phone,
-              prefixIcon: Icons.phone_outlined,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.telephoneNumber],
-              onFieldSubmitted: (_) => _focusNext(_passwordFocusNode),
-              validator: (value) =>
-                  Validators.required(value, fieldName: AppStrings.phone),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Text(
+              AppStrings.securitySection,
+              style: AppTypography.sectionTitle,
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(

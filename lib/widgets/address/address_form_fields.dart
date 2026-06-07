@@ -213,7 +213,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
               child: AppTextField(
                 controller: widget.numberController,
                 focusNode: widget.numberFocusNode,
-                hintText: AppStrings.number,
+                hintText: AppStrings.numberHint,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 enabled: _cepResolved,
@@ -270,7 +270,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             Expanded(
               child: AppTextField(
                 controller: widget.stateController,
-                hintText: AppStrings.state,
+                hintText: AppStrings.stateHint,
                 readOnly: true,
                 enabled: _cepResolved,
               ),

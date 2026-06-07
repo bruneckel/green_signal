@@ -46,4 +46,15 @@ class Validators {
     }
     return null;
   }
+
+  static String? phone(String? value) {
+    const fieldName = 'Telefone';
+    final requiredError = required(value, fieldName: fieldName);
+    if (requiredError != null) return requiredError;
+    final digits = value!.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 10 || digits.length > 11) {
+      return '$fieldName inválido';
+    }
+    return null;
+  }
 }

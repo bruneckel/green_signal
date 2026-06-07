@@ -2,6 +2,7 @@ import '../../models/user_account.dart';
 import 'auth_exceptions.dart';
 import 'auth_repository.dart';
 import 'password_hasher.dart';
+import '../../core/utils/phone_input_formatter.dart';
 
 class FakeAuthRepository extends AuthRepository {
   FakeAuthRepository({
@@ -67,7 +68,7 @@ class FakeAuthRepository extends AuthRepository {
       UserAccount(
         name: name.trim(),
         email: normalizedEmail,
-        phone: phone.trim(),
+        phone: stripPhoneDigits(phone),
         passwordHash: hashPassword(password),
         cep: cep.replaceAll(RegExp(r'\D'), ''),
         street: street.trim(),
@@ -121,7 +122,7 @@ class FakeAuthRepository extends AuthRepository {
     final updated = UserAccount(
       name: name.trim(),
       email: current.email,
-      phone: phone.trim(),
+      phone: stripPhoneDigits(phone),
       passwordHash: current.passwordHash,
       cep: cep.replaceAll(RegExp(r'\D'), ''),
       street: street.trim(),

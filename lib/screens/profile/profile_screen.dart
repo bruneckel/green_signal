@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
@@ -8,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/cep_input_formatter.dart';
 import '../../core/utils/form_utils.dart';
+import '../../core/utils/phone_input_formatter.dart';
 import '../../core/utils/validators.dart';
 import '../../models/user_account.dart';
 import '../../services/address/viacep_client.dart';
@@ -99,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     _nameController.text = user.name;
     _emailController.text = user.email;
-    _phoneController.text = user.phone;
+    _phoneController.text = formatPhoneDisplay(user.phone);
 
     if (user.hasStructuredAddress) {
       _cepController.text = formatCepDisplay(user.cep);
@@ -259,17 +261,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Text(
                           user.name,
                           textAlign: TextAlign.center,
-                          style: AppTypography.authTitle.copyWith(fontSize: 20),
+                          style: AppTypography.authTitle.copyWith(
+                            fontSize: 20,
+                            height: 1.2,
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.xs),
+                        const SizedBox(height: 4),
                         Text(
                           user.email,
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySecondary,
+                          style: AppTypography.bodySecondary.copyWith(
+                            height: 1.2,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sectionGap),
                         Text(
-                          ProfileStrings.personalDataSection,
+                          AppStrings.personalDataSection,
                           style: AppTypography.sectionTitle,
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -311,16 +318,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           prefixIcon: Icons.phone_outlined,
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.next,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(11),
+                            PhoneInputFormatter(),
+                          ],
                           onFieldSubmitted: (_) =>
                               FocusScope.of(context).requestFocus(_cepFocusNode),
-                          validator: (value) => Validators.required(
-                            value,
-                            fieldName: AppStrings.phone,
-                          ),
+                          validator: Validators.phone,
                         ),
                         const SizedBox(height: AppSpacing.sectionGap),
                         Text(
-                          ProfileStrings.addressSection,
+                          AppStrings.addressSection,
                           style: AppTypography.sectionTitle,
                         ),
                         const SizedBox(height: AppSpacing.md),

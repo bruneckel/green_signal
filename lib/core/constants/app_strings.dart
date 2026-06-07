@@ -17,12 +17,18 @@ abstract final class AppStrings {
   static const cep = 'CEP';
   static const street = 'Rua';
   static const number = 'Número';
+  static const numberHint = 'N°';
   static const complement = 'Complemento';
   static const neighborhood = 'Bairro';
   static const city = 'Cidade';
   static const state = 'Estado';
+  static const stateHint = 'UF';
   static const address = 'Endereço';
   static const phone = 'Telefone';
+
+  static const personalDataSection = 'Dados pessoais';
+  static const addressSection = 'Endereço';
+  static const securitySection = 'Senha de acesso';
 
   static const forgotPassword = 'Esqueci minha senha';
   static const login = 'Entrar';

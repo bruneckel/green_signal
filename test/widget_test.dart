@@ -201,12 +201,12 @@ void main() {
       find.byType(TextFormField).at(1),
       'novo@example.com',
     );
-    await tester.enterText(find.byType(TextFormField).at(2), '85862350');
+    await tester.enterText(find.byType(TextFormField).at(2), '11988887777');
+    await tester.enterText(find.byType(TextFormField).at(3), '85862350');
     await tester.pump();
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(4), '100');
-    await tester.enterText(find.byType(TextFormField).at(9), '11988887777');
+    await tester.enterText(find.byType(TextFormField).at(5), '100');
     await tester.enterText(find.byType(TextFormField).at(10), '123456');
     await tester.enterText(find.byType(TextFormField).at(11), '123456');
 

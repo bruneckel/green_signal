@@ -62,12 +62,15 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     user?.name ?? AppStrings.mockUserName,
-                    style: AppTypography.authTitle.copyWith(fontSize: 20),
+                    style: AppTypography.authTitle.copyWith(
+                      fontSize: 20,
+                      height: 1.2,
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 4),
                   Text(
                     user?.email ?? AppStrings.mockUserEmail,
-                    style: AppTypography.bodySecondary,
+                    style: AppTypography.bodySecondary.copyWith(height: 1.2),
                   ),
                 ],
               ),

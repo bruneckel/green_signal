@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/utils/phone_input_formatter.dart';
 import '../../models/map_layer_data.dart';
 import '../../models/user_account.dart';
 import '../address/user_coordinates_resolver.dart';
@@ -76,7 +77,7 @@ class LocalAuthRepository extends AuthRepository {
     final draftUser = UserAccount(
       name: name.trim(),
       email: normalizedEmail,
-      phone: phone.trim(),
+      phone: stripPhoneDigits(phone),
       passwordHash: hashPassword(password),
       cep: cep.replaceAll(RegExp(r'\D'), ''),
       street: street.trim(),
@@ -152,7 +153,7 @@ class LocalAuthRepository extends AuthRepository {
     final draftUser = UserAccount(
       name: name.trim(),
       email: current.email,
-      phone: phone.trim(),
+      phone: stripPhoneDigits(phone),
       passwordHash: current.passwordHash,
       cep: cep.replaceAll(RegExp(r'\D'), ''),
       street: street.trim(),
