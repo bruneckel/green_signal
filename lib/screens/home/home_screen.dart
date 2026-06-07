@@ -15,9 +15,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfaceMuted,
-      body: SafeArea(
+    return ColoredBox(
+      color: AppColors.surfaceMuted,
+      child: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: AppSpacing.xxl),

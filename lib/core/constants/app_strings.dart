@@ -26,4 +26,10 @@ abstract final class AppStrings {
   static const loginSuccess = 'Login realizado com sucesso!';
   static const registerSuccess = 'Cadastro realizado com sucesso!';
   static const featureComingSoon = 'Funcionalidade em breve.';
+
+  static const profile = 'Perfil';
+  static const logout = 'Sair';
+
+  static const mockUserName = 'Bruno Neckel';
+  static const mockUserEmail = 'bruno@email.com';
 }

@@ -25,8 +25,7 @@ class HomeHeader extends StatelessWidget {
             children: [
               _HeaderIconButton(
                 icon: Icons.menu,
-                onPressed: () =>
-                    showAppSnackBar(context, AppStrings.featureComingSoon),
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
               const Expanded(
                 child: Text(
