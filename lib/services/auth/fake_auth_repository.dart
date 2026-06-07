@@ -4,12 +4,13 @@ import 'auth_repository.dart';
 import 'password_hasher.dart';
 
 class FakeAuthRepository extends AuthRepository {
-  FakeAuthRepository({this.startLoggedIn = false}) {
-    _users = [testUser];
-
-    if (startLoggedIn) {
-      _currentUser = _users.first;
-    }
+  FakeAuthRepository({
+    this.startLoggedIn = false,
+    List<UserAccount>? users,
+    UserAccount? loggedInUser,
+  }) {
+    _users = users ?? [testUser];
+    _currentUser = loggedInUser ?? (startLoggedIn ? _users.first : null);
   }
 
   static final testUser = UserAccount(
@@ -23,8 +24,8 @@ class FakeAuthRepository extends AuthRepository {
     neighborhood: 'Vila Madalena',
     city: 'São Paulo',
     state: 'SP',
-    latitude: -23.5505,
-    longitude: -46.6333,
+    latitude: -23.546,
+    longitude: -46.691,
   );
 
   final bool startLoggedIn;

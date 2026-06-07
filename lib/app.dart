@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'router/app_router.dart';
+import 'services/address/user_coordinates_resolver.dart';
 import 'services/address/viacep_client.dart';
 import 'services/auth/auth_repository.dart';
 import 'services/environment/environmental_repository.dart';
@@ -21,7 +22,11 @@ class GreenSignalApp extends StatelessWidget {
     final mapRepo = mapRepository ?? LiveMapRepository();
     final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
     final unifiedResolver = locationResolver ??
-        UnifiedLocationResolver(geocodingClient: GeocodingClient());
+        UnifiedLocationResolver(
+          coordinatesResolver: UserCoordinatesResolver(
+            geocodingClient: GeocodingClient(),
+          ),
+        );
     final cepClient = viaCepClient ?? LiveViaCepClient();
 
     return GreenSignalApp._(

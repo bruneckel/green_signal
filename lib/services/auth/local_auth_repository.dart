@@ -1,21 +1,24 @@
 import 'dart:convert';
 
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/map_layer_data.dart';
 import '../../models/user_account.dart';
-import '../environment/geocoding_client.dart';
+import '../address/user_coordinates_resolver.dart';
 import 'auth_exceptions.dart';
 import 'auth_repository.dart';
 import 'password_hasher.dart';
 
 class LocalAuthRepository extends AuthRepository {
-  LocalAuthRepository({GeocodingClient? geocodingClient})
-      : _geocodingClient = geocodingClient ?? GeocodingClient();
+  LocalAuthRepository({UserCoordinatesResolver? coordinatesResolver})
+      : _coordinatesResolver =
+            coordinatesResolver ?? UserCoordinatesResolver();
 
   static const _usersKey = 'auth_users';
   static const _sessionEmailKey = 'auth_session_email';
 
-  final GeocodingClient _geocodingClient;
+  final UserCoordinatesResolver _coordinatesResolver;
 
   List<UserAccount> _users = [];
   UserAccount? _currentUser;
@@ -40,7 +43,14 @@ class LocalAuthRepository extends AuthRepository {
 
     final sessionEmail = prefs.getString(_sessionEmailKey);
     if (sessionEmail != null) {
-      _currentUser = _findUserByEmail(sessionEmail);
+      final user = _findUserByEmail(sessionEmail);
+      if (user != null) {
+        final migrated = await _ensureUserCoordinates(user);
+        _currentUser = migrated;
+        if (migrated != user) {
+          notifyListeners();
+        }
+      }
     }
   }
 
@@ -64,11 +74,7 @@ class LocalAuthRepository extends AuthRepository {
       throw EmailAlreadyRegisteredException();
     }
 
-    final formattedAddress =
-        '$street, $number, $neighborhood, $city - $state, Brasil';
-    final geocoded = await _geocodingClient.resolve(formattedAddress);
-
-    final user = UserAccount(
+    final draftUser = UserAccount(
       name: name.trim(),
       email: normalizedEmail,
       phone: phone.trim(),
@@ -80,8 +86,23 @@ class LocalAuthRepository extends AuthRepository {
       neighborhood: neighborhood.trim(),
       city: city.trim(),
       state: state.trim(),
-      latitude: geocoded.position.latitude,
-      longitude: geocoded.position.longitude,
+    );
+    final coords = await _coordinatesResolver.resolve(draftUser);
+
+    final user = UserAccount(
+      name: draftUser.name,
+      email: draftUser.email,
+      phone: draftUser.phone,
+      passwordHash: draftUser.passwordHash,
+      cep: draftUser.cep,
+      street: draftUser.street,
+      number: draftUser.number,
+      complement: draftUser.complement,
+      neighborhood: draftUser.neighborhood,
+      city: draftUser.city,
+      state: draftUser.state,
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
     );
 
     _users = [..._users, user];
@@ -99,9 +120,10 @@ class LocalAuthRepository extends AuthRepository {
       throw InvalidCredentialsException();
     }
 
-    _currentUser = user;
+    final migrated = await _ensureUserCoordinates(user);
+    _currentUser = migrated;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_sessionEmailKey, user.email);
+    await prefs.setString(_sessionEmailKey, migrated.email);
     notifyListeners();
   }
 
@@ -111,6 +133,36 @@ class LocalAuthRepository extends AuthRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionEmailKey);
     notifyListeners();
+  }
+
+  Future<UserAccount> _ensureUserCoordinates(UserAccount user) async {
+    if (!MapLayerData.needsCoordinateRefresh(user)) return user;
+
+    final coords = await _coordinatesResolver.resolve(user);
+    if (coords == null) return user;
+
+    final updated = UserAccount(
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      passwordHash: user.passwordHash,
+      cep: user.cep,
+      street: user.street,
+      number: user.number,
+      complement: user.complement,
+      neighborhood: user.neighborhood,
+      city: user.city,
+      state: user.state,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      legacyAddress: user.legacyAddress,
+    );
+
+    _users = _users
+        .map((entry) => entry.email == updated.email ? updated : entry)
+        .toList();
+    await _saveUsers();
+    return updated;
   }
 
   UserAccount? _findUserByEmail(String email) {
@@ -129,5 +181,5 @@ class LocalAuthRepository extends AuthRepository {
     await prefs.setString(_usersKey, encoded);
   }
 
-  void dispose() => _geocodingClient.dispose();
+  void dispose() => _coordinatesResolver.dispose();
 }

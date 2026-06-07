@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/map_strings.dart';
 import '../core/theme/app_colors.dart';
+import 'user_account.dart';
 
 enum MapLayer {
   airQuality,
@@ -80,6 +81,51 @@ extension MapLayerVisual on MapLayer {
 
 class MapLayerData {
   static const saoPauloCenter = LatLng(-23.5505, -46.6333);
+  static const saoPauloFallbackTolerance = 0.001;
+
+  static bool isSaoPauloFallback(LatLng position) {
+    return (position.latitude - saoPauloCenter.latitude).abs() <
+            saoPauloFallbackTolerance &&
+        (position.longitude - saoPauloCenter.longitude).abs() <
+            saoPauloFallbackTolerance;
+  }
+
+  static bool isSaoPauloProfile(UserAccount user) {
+    final city = user.city.toLowerCase();
+    return city.contains('são paulo') || city.contains('sao paulo');
+  }
+
+  static bool isNearSaoPaulo(LatLng position, {double radiusKm = 80}) {
+    return _distanceKm(position, saoPauloCenter) <= radiusKm;
+  }
+
+  static bool needsCoordinateRefresh(UserAccount user) {
+    if (!user.hasStructuredAddress) return false;
+
+    final stored = user.storedPosition;
+    if (stored == null) return true;
+    if (isSaoPauloFallback(stored)) return true;
+    if (!isSaoPauloProfile(user) && isNearSaoPaulo(stored)) return true;
+    return false;
+  }
+
+  static double _distanceKm(LatLng a, LatLng b) {
+    const earthRadiusKm = 6371.0;
+    final dLat = _toRadians(b.latitude - a.latitude);
+    final dLon = _toRadians(b.longitude - a.longitude);
+    final lat1 = _toRadians(a.latitude);
+    final lat2 = _toRadians(b.latitude);
+    final haversine = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+    return earthRadiusKm * c;
+  }
+
+  static double _toRadians(double degrees) => degrees * math.pi / 180;
+
   static const initialZoom = 10.0;
   static const minZoom = 8.0;
   static const maxZoom = 16.0;

@@ -4,7 +4,7 @@ import '../../models/environmental_snapshot.dart';
 import '../../models/map_layer_data.dart';
 import '../../models/user_account.dart';
 import '../auth/auth_repository.dart';
-import 'geocoding_client.dart';
+import '../address/user_coordinates_resolver.dart';
 import 'location_resolver.dart';
 
 class UnifiedLocationResult {
@@ -14,10 +14,12 @@ class UnifiedLocationResult {
 }
 
 class UnifiedLocationResolver implements LocationResolver {
-  UnifiedLocationResolver({GeocodingClient? geocodingClient})
-      : _geocodingClient = geocodingClient ?? GeocodingClient();
+  UnifiedLocationResolver({
+    UserCoordinatesResolver? coordinatesResolver,
+  }) : _coordinatesResolver =
+            coordinatesResolver ?? UserCoordinatesResolver();
 
-  final GeocodingClient _geocodingClient;
+  final UserCoordinatesResolver _coordinatesResolver;
 
   @override
   Future<ResolvedLocation> resolve(AuthRepository auth) async {
@@ -28,26 +30,24 @@ class UnifiedLocationResolver implements LocationResolver {
   Future<UnifiedLocationResult> resolveWithMeta(AuthRepository auth) async {
     final user = auth.currentUser;
 
-    final stored = user?.storedPosition;
-    if (stored != null) {
-      return UnifiedLocationResult(
-        location: _locationFromProfile(stored, user),
-      );
-    }
+    if (user != null) {
+      final stored = user.storedPosition;
+      if (stored != null && !MapLayerData.needsCoordinateRefresh(user)) {
+        return UnifiedLocationResult(
+          location: _locationFromProfile(stored, user),
+        );
+      }
 
-    final query = _geocodeQuery(user);
-    if (query != null && query.isNotEmpty) {
-      final geocoded = await _geocodingClient.resolve(query);
+      final coords = await _coordinatesResolver.resolve(user);
+      if (coords != null) {
+        return UnifiedLocationResult(
+          location: _locationFromProfile(coords, user),
+        );
+      }
+
+      final fallbackPosition = user.storedPosition ?? MapLayerData.saoPauloCenter;
       return UnifiedLocationResult(
-        location: ResolvedLocation(
-          position: geocoded.position,
-          label: _profileLabel(user).isNotEmpty
-              ? _profileLabel(user)
-              : geocoded.label,
-          neighborhood: _neighborhood(user).isNotEmpty
-              ? _neighborhood(user)
-              : geocoded.neighborhood,
-        ),
+        location: _locationFromProfile(fallbackPosition, user),
       );
     }
 
@@ -72,16 +72,6 @@ class UnifiedLocationResolver implements LocationResolver {
     );
   }
 
-  String? _geocodeQuery(UserAccount? user) {
-    if (user == null) return null;
-    if (user.hasStructuredAddress) {
-      return '${user.formattedAddress}, Brasil';
-    }
-    final legacy = user.legacyAddress ?? user.address;
-    if (legacy.isNotEmpty) return legacy;
-    return null;
-  }
-
   String _profileLabel(UserAccount? user) {
     if (user == null) return '';
     if (user.hasStructuredAddress) return '${user.city}, ${user.state}';
@@ -94,5 +84,5 @@ class UnifiedLocationResolver implements LocationResolver {
     return '';
   }
 
-  void dispose() => _geocodingClient.dispose();
+  void dispose() => _coordinatesResolver.dispose();
 }

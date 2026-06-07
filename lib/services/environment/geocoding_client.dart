@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/map_config.dart';
 import '../../models/environmental_snapshot.dart';
 import '../../models/map_layer_data.dart';
+import '../../models/user_account.dart';
 
 class GeocodingClient {
   GeocodingClient({http.Client? client}) : _client = client ?? http.Client();
@@ -79,17 +80,60 @@ class GeocodingClient {
         neighborhood: name,
       );
 
-      _memoryCache[cacheKey] = _GeocodeCacheEntry(
-        location: resolved,
-        expiresAt: DateTime.now().add(
-          Duration(days: MapConfig.geocodeCacheTtlDays),
-        ),
-      );
-      await _persist(cacheKey, resolved);
+      if (!MapLayerData.isSaoPauloFallback(resolved.position)) {
+        _memoryCache[cacheKey] = _GeocodeCacheEntry(
+          location: resolved,
+          expiresAt: DateTime.now().add(
+            Duration(days: MapConfig.geocodeCacheTtlDays),
+          ),
+        );
+        await _persist(cacheKey, resolved);
+      }
       return resolved;
     } catch (_) {
       return _fallbackLocation();
     }
+  }
+
+  Future<ResolvedLocation> resolveForUser(UserAccount user) async {
+    if (user.hasStructuredAddress) {
+      final fullAddress = '${user.formattedAddress}, Brasil';
+      final fullResult = await resolve(fullAddress);
+      if (!_isRejectedForUser(fullResult.position, user)) {
+        return fullResult;
+      }
+
+      final cityResult = await resolve('${user.city}, ${user.state}, Brasil');
+      if (!_isRejectedForUser(cityResult.position, user)) {
+        return cityResult;
+      }
+
+      // Open-Meteo often misses "City, UF, Brasil" but resolves the city name alone.
+      final cityOnlyResult = await resolve(user.city);
+      if (!_isRejectedForUser(cityOnlyResult.position, user)) {
+        return cityOnlyResult;
+      }
+    } else {
+      final legacy = user.legacyAddress ?? user.address;
+      if (legacy.isNotEmpty) {
+        final legacyResult = await resolve(legacy);
+        if (!MapLayerData.isSaoPauloFallback(legacyResult.position)) {
+          return legacyResult;
+        }
+      }
+    }
+
+    return _fallbackLocation();
+  }
+
+  bool _isRejectedForUser(LatLng position, UserAccount user) {
+    if (!MapLayerData.isSaoPauloFallback(position)) return false;
+    return !_isSaoPauloProfile(user);
+  }
+
+  bool _isSaoPauloProfile(UserAccount user) {
+    final city = user.city.toLowerCase();
+    return city.contains('são paulo') || city.contains('sao paulo');
   }
 
   ResolvedLocation _fallbackLocation() {
@@ -110,6 +154,8 @@ class GeocodingClient {
   String _cacheKey(String query) => query.toLowerCase();
 
   Future<void> _persist(String key, ResolvedLocation location) async {
+    if (MapLayerData.isSaoPauloFallback(location.position)) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -140,11 +186,17 @@ class GeocodingClient {
         return null;
       }
 
+      final position = LatLng(
+        (json['lat'] as num).toDouble(),
+        (json['lon'] as num).toDouble(),
+      );
+      if (MapLayerData.isSaoPauloFallback(position)) {
+        await prefs.remove('geocode_cache_$key');
+        return null;
+      }
+
       return ResolvedLocation(
-        position: LatLng(
-          (json['lat'] as num).toDouble(),
-          (json['lon'] as num).toDouble(),
-        ),
+        position: position,
         label: json['label'] as String,
         neighborhood: json['neighborhood'] as String,
       );

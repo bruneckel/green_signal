@@ -10,6 +10,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../services/address/user_coordinates_resolver.dart';
 import '../services/address/viacep_client.dart';
 import '../services/auth/auth_repository.dart';
 import '../services/environment/environmental_repository.dart';
@@ -42,7 +43,11 @@ GoRouter createRouter({
   final mapRepo = mapRepository ?? LiveMapRepository();
   final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
   final unifiedResolver = locationResolver ??
-      UnifiedLocationResolver(geocodingClient: GeocodingClient());
+      UnifiedLocationResolver(
+        coordinatesResolver: UserCoordinatesResolver(
+          geocodingClient: GeocodingClient(),
+        ),
+      );
   final cepClient = viaCepClient ?? LiveViaCepClient();
 
   return GoRouter(

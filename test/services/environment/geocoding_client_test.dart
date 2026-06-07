@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:green_signal/models/map_layer_data.dart';
+import 'package:green_signal/models/user_account.dart';
 import 'package:green_signal/services/environment/geocoding_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -64,6 +65,49 @@ void main() {
 
       expect(resolved.position, MapLayerData.saoPauloCenter);
 
+      client.dispose();
+    });
+
+    test('resolveForUser falls back to city name when UF query fails', () async {
+      const fozUser = UserAccount(
+        name: 'Foz User',
+        email: 'foz@test.com',
+        phone: '45999999999',
+        passwordHash: 'hash',
+        cep: '85863310',
+        street: 'Rua João Goulart',
+        number: '100',
+        neighborhood: 'Centro Cívico',
+        city: 'Foz do Iguaçu',
+        state: 'PR',
+      );
+
+      final client = GeocodingClient(
+        client: MockClient((request) async {
+          final name = request.url.queryParameters['name'] ?? '';
+          if (name == 'Foz do Iguaçu') {
+            return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'name': 'Foz do Iguaçu',
+                    'admin1': 'Paraná',
+                    'country': 'Brazil',
+                    'latitude': -25.5478,
+                    'longitude': -54.5882,
+                  },
+                ],
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+
+      final resolved = await client.resolveForUser(fozUser);
+
+      expect(resolved.position.latitude, closeTo(-25.5478, 0.001));
       client.dispose();
     });
   });

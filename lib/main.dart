@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'services/address/brasil_api_cep_client.dart';
+import 'services/address/user_coordinates_resolver.dart';
 import 'services/address/viacep_client.dart';
 import 'services/auth/local_auth_repository.dart';
 import 'services/environment/environmental_repository.dart';
@@ -14,7 +16,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final geocodingClient = GeocodingClient();
-  final authRepository = LocalAuthRepository(geocodingClient: geocodingClient);
+  final brasilApiCepClient = LiveBrasilApiCepClient();
+  final coordinatesResolver = UserCoordinatesResolver(
+    brasilApiCepClient: brasilApiCepClient,
+    geocodingClient: geocodingClient,
+  );
+  final authRepository = LocalAuthRepository(
+    coordinatesResolver: coordinatesResolver,
+  );
   await authRepository.initialize();
 
   final openMeteoClient = OpenMeteoClient();
@@ -28,7 +37,7 @@ Future<void> main() async {
     inpeFocosClient: inpeFocosClient,
   );
   final locationResolver = UnifiedLocationResolver(
-    geocodingClient: geocodingClient,
+    coordinatesResolver: coordinatesResolver,
   );
   final viaCepClient = LiveViaCepClient();
 

@@ -63,6 +63,10 @@ class _EnvironmentalMapViewState extends State<EnvironmentalMapView> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _rebuildController.add(null);
+      _mapController.move(
+        widget.initialCenter,
+        MapLayerData.initialZoom,
+      );
     });
   }
 

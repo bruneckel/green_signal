@@ -54,6 +54,8 @@ class _MapScreenState extends State<MapScreen> {
   double? _lastZoom;
   Timer? _fetchDebounceTimer;
 
+  String? _lastResolvedCoordsKey;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +65,11 @@ class _MapScreenState extends State<MapScreen> {
       _liveRepository = LiveMapRepository();
       _repository = _liveRepository!;
     }
+    widget.authRepository.addListener(_onAuthChanged);
+    _resolveMapCenter();
+  }
+
+  void _onAuthChanged() {
     _resolveMapCenter();
   }
 
@@ -73,14 +80,22 @@ class _MapScreenState extends State<MapScreen> {
 
     if (!mounted) return;
 
+    final coordsKey =
+        '${location.position.latitude},${location.position.longitude}';
+    if (coordsKey == _lastResolvedCoordsKey && _mapCenter != null) return;
+
     setState(() {
       _mapCenter = location.position;
       _isLocating = false;
+      _lastResolvedCoordsKey = coordsKey;
+      _points = const [];
+      _hotspotMarkers = const [];
     });
   }
 
   @override
   void dispose() {
+    widget.authRepository.removeListener(_onAuthChanged);
     _fetchDebounceTimer?.cancel();
     _liveRepository?.dispose();
     super.dispose();
@@ -190,7 +205,10 @@ class _MapScreenState extends State<MapScreen> {
               child: _isLocating || mapCenter == null
                   ? const Center(child: CircularProgressIndicator())
                   : EnvironmentalMapView(
-                      key: ValueKey(_selectedLayer),
+                      key: ValueKey(
+                        '${_selectedLayer.name}_'
+                        '${mapCenter.latitude}_${mapCenter.longitude}',
+                      ),
                       layer: _selectedLayer,
                       points: _points,
                       displayMode: _displayMode,
