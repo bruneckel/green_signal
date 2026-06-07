@@ -9,6 +9,7 @@ import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/profile_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
+import 'package:green_signal/screens/splash/splash_screen.dart';
 import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/models/alert_item.dart';
 import 'package:green_signal/services/alerts/alerts_repository.dart';
@@ -98,7 +99,7 @@ Future<void> _goToLogin(
     ),
   );
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 2500));
+  await tester.pump(SplashScreen.duration);
   await tester.pumpAndSettle();
 }
 
@@ -133,7 +134,7 @@ void main() {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
 
-    await tester.pump(const Duration(milliseconds: 2500));
+    await tester.pump(SplashScreen.duration);
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
@@ -252,7 +253,7 @@ void main() {
       _buildApp(authRepository: _fakeAuthRepository(startLoggedIn: true)),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 2500));
+    await tester.pump(SplashScreen.duration);
     await tester.pumpAndSettle();
 
     expect(find.text('83'), findsOneWidget);
@@ -325,6 +326,40 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nome Editado'), findsOneWidget);
+  });
+
+  testWidgets('Score refreshes neighborhood after profile save', (
+    WidgetTester tester,
+  ) async {
+    final auth = FakeAuthRepository();
+    await _loginAndGoHome(tester, authRepository: auth);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.profile));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Vila Madalena'),
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.enterText(find.text('Vila Madalena'), 'Centro');
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text(ProfileStrings.save),
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.widgetWithText(ElevatedButton, ProfileStrings.save));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(HomeStrings.navScore));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Centro'), findsOneWidget);
+    expect(find.textContaining('Vila Madalena'), findsNothing);
   });
 
   testWidgets('Bottom nav opens map screen', (WidgetTester tester) async {

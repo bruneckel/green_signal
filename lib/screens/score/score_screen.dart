@@ -11,7 +11,10 @@ import '../../services/environment/location_resolver.dart';
 import '../../services/environment/snapshot_presentation.dart';
 import '../../widgets/home/risk_score_card.dart';
 import '../../widgets/score/environmental_indicators_list.dart';
-import '../../widgets/score/score_screen_header.dart';
+import '../../widgets/score/score_neighborhood_header.dart';
+import '../../widgets/shared/screen_loading_indicator.dart';
+import '../../widgets/shell/tab_screen_header.dart';
+import '../../widgets/shell/tab_screen_scaffold.dart';
 
 class ScoreScreen extends StatefulWidget {
   const ScoreScreen({
@@ -36,8 +39,17 @@ class _ScoreScreenState extends State<ScoreScreen> {
   @override
   void initState() {
     super.initState();
+    widget.authRepository.addListener(_onAuthChanged);
     _loadSnapshot();
   }
+
+  @override
+  void dispose() {
+    widget.authRepository.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() => _loadSnapshot();
 
   Future<void> _loadSnapshot() async {
     setState(() => _isLoading = true);
@@ -68,79 +80,49 @@ class _ScoreScreenState extends State<ScoreScreen> {
         _data?.neighborhood ?? user?.neighborhood ?? ScoreStrings.loadingLabel;
     final city = _data?.city ?? user?.profileLabel ?? '';
 
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.md),
-              const ScoreScreenHeader(),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenHorizontal,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: AppSpacing.lg),
-                    Text.rich(
-                      TextSpan(
-                        style: AppTypography.sectionTitle.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: '${ScoreStrings.neighborhoodPrefix} ',
-                            style: AppTypography.bodySecondary.copyWith(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          TextSpan(text: neighborhood),
-                        ],
-                      ),
-                    ),
-                    if (city.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        city,
-                        style:
-                            AppTypography.bodySecondary.copyWith(fontSize: 14),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.lg),
-                    if (_isLoading || _data == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.xxl),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else ...[
-                      RiskScoreCard(
-                        riskScore: _data!.riskScore,
-                        riskLevel: _data!.riskLevel,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      const Text(
-                        ScoreStrings.indicatorsTitle,
-                        style: AppTypography.sectionTitle,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      EnvironmentalIndicatorsList(
-                        indicators: _data!.indicators,
-                      ),
-                    ],
-                  ],
-                ),
+    return TabScreenScaffold(
+      backgroundColor: AppColors.background,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpacing.md),
+            const TabScreenHeader(title: ScoreStrings.screenTitle),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenHorizontal,
               ),
-            ],
-          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
+                  ScoreNeighborhoodHeader(
+                    neighborhood: neighborhood,
+                    city: city,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (_isLoading || _data == null)
+                    const ScreenLoadingIndicator()
+                  else ...[
+                    RiskScoreCard(
+                      riskScore: _data!.riskScore,
+                      riskLevel: _data!.riskLevel,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      ScoreStrings.indicatorsTitle,
+                      style: AppTypography.sectionTitle,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    EnvironmentalIndicatorsList(
+                      indicators: _data!.indicators,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

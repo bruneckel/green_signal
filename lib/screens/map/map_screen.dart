@@ -5,11 +5,10 @@ import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/map_config.dart';
-import '../../core/utils/form_utils.dart';
 import '../../core/constants/map_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_typography.dart';
+import '../../core/utils/form_utils.dart';
 import '../../models/inpe_hotspot_point.dart';
 import '../../models/map_layer_data.dart';
 import '../../services/auth/auth_repository.dart';
@@ -18,7 +17,9 @@ import '../../services/map/map_grid_sampler.dart';
 import '../../services/map/map_repository.dart';
 import '../../widgets/map/environmental_map_view.dart';
 import '../../widgets/map/map_filter_chips.dart';
-import '../../widgets/map/map_legend.dart';
+import '../../widgets/map/map_screen_footer.dart';
+import '../../widgets/shell/tab_screen_header.dart';
+import '../../widgets/shell/tab_screen_scaffold.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -168,103 +169,51 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  String? _emptyMessage() {
-    if (!_isEmpty || _isLoading) return null;
-    return switch (_selectedLayer) {
-      MapLayer.rain => MapStrings.noRainInRegion,
-      MapLayer.hotspots => MapStrings.noHotspotsInRegion,
-      MapLayer.temperature => MapStrings.noTemperatureInRegion,
-      _ => null,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    final emptyMessage = _emptyMessage();
     final mapCenter = _mapCenter;
 
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              MapStrings.mapTitle,
-              textAlign: TextAlign.center,
-              style: AppTypography.appBarTitle,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            MapFilterChips(
-              selectedLayer: _selectedLayer,
-              onLayerChanged: _onLayerChanged,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: _isLocating || mapCenter == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : EnvironmentalMapView(
-                      key: ValueKey(
-                        '${_selectedLayer.name}_'
-                        '${mapCenter.latitude}_${mapCenter.longitude}',
-                      ),
-                      layer: _selectedLayer,
-                      points: _points,
-                      displayMode: _displayMode,
-                      hotspotMarkers: _hotspotMarkers,
-                      gridLatStep: _gridLatStep,
-                      gridLngStep: _gridLngStep,
-                      isLoading: _isLoading,
-                      initialCenter: mapCenter,
-                      onViewportChanged: _onViewportChanged,
+    return TabScreenScaffold(
+      backgroundColor: AppColors.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          const TabScreenHeader(title: MapStrings.mapTitle),
+          const SizedBox(height: AppSpacing.md),
+          MapFilterChips(
+            selectedLayer: _selectedLayer,
+            onLayerChanged: _onLayerChanged,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: _isLocating || mapCenter == null
+                ? const Center(child: CircularProgressIndicator())
+                : EnvironmentalMapView(
+                    key: ValueKey(
+                      '${_selectedLayer.name}_'
+                      '${mapCenter.latitude}_${mapCenter.longitude}',
                     ),
-            ),
-            if (_hasError &&
-                _points.isEmpty &&
-                _hotspotMarkers.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenHorizontal,
-                ),
-                child: Text(
-                  MapStrings.loadError,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySecondary.copyWith(
-                    color: AppColors.riskHigh,
-                    fontSize: 13,
+                    layer: _selectedLayer,
+                    points: _points,
+                    displayMode: _displayMode,
+                    hotspotMarkers: _hotspotMarkers,
+                    gridLatStep: _gridLatStep,
+                    gridLngStep: _gridLngStep,
+                    isLoading: _isLoading,
+                    initialCenter: mapCenter,
+                    onViewportChanged: _onViewportChanged,
                   ),
-                ),
-              ),
-            if (emptyMessage != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenHorizontal,
-                  vertical: AppSpacing.xs,
-                ),
-                child: Text(
-                  emptyMessage,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySecondary.copyWith(fontSize: 13),
-                ),
-              ),
-            MapLegend(layer: _selectedLayer),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenHorizontal,
-                0,
-                AppSpacing.screenHorizontal,
-                AppSpacing.sm,
-              ),
-              child: Text(
-                MapStrings.attribution,
-                textAlign: TextAlign.center,
-                style: AppTypography.bodySecondary.copyWith(fontSize: 11),
-              ),
-            ),
-          ],
-        ),
+          ),
+          MapScreenFooter(
+            layer: _selectedLayer,
+            hasError: _hasError,
+            isEmpty: _isEmpty,
+            isLoading: _isLoading,
+            pointsEmpty: _points.isEmpty,
+            hotspotMarkersEmpty: _hotspotMarkers.isEmpty,
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../router/app_router.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/form_utils.dart';
@@ -54,20 +55,20 @@ class HomeHeader extends StatelessWidget {
               const Icon(
                 Icons.location_on_outlined,
                 size: 18,
-                color: Color(0xFF757575),
+                color: AppColors.textSecondary,
               ),
               const SizedBox(width: 4),
               Text(
                 city,
                 style: AppTypography.bodySecondary.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1A1A1A),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const Icon(
                 Icons.keyboard_arrow_down,
                 size: 20,
-                color: Color(0xFF757575),
+                color: AppColors.textSecondary,
               ),
             ],
           ),

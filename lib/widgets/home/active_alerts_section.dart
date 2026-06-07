@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/home_strings.dart';
 import '../../router/app_router.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../models/home_data.dart';
 import 'alert_tile.dart';
 import 'app_section_card.dart';
@@ -35,11 +36,7 @@ class ActiveAlertsSection extends StatelessWidget {
               onTap: () => context.go(AppRoutes.alerts),
               child: const Text(
                 HomeStrings.viewAll,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF757575),
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTypography.viewAll,
               ),
             ),
           ),

@@ -14,6 +14,8 @@ import '../../widgets/app_logo.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.authRepository});
 
+  static const duration = Duration(milliseconds: 2500);
+
   final AuthRepository authRepository;
 
   @override
@@ -21,15 +23,13 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static const _splashDuration = Duration(milliseconds: 2500);
-
   Timer? _timer;
   bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(_splashDuration, _navigateFromSplash);
+    _timer = Timer(SplashScreen.duration, _navigateFromSplash);
   }
 
   @override

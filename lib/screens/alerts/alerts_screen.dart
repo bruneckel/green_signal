@@ -11,11 +11,11 @@ import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
 import '../../services/environment/location_resolver.dart';
-import '../../widgets/alerts/alert_card.dart';
 import '../../widgets/alerts/alert_filter_sheet.dart';
-import '../../widgets/alerts/alerts_empty_state.dart';
-import '../../widgets/alerts/alerts_grouped_list.dart';
-import '../../widgets/alerts/alerts_screen_header.dart';
+import '../../widgets/alerts/alerts_list_content.dart';
+import '../../widgets/shared/inline_error_banner.dart';
+import '../../widgets/shell/tab_screen_header.dart';
+import '../../widgets/shell/tab_screen_scaffold.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({
@@ -108,91 +108,47 @@ class _AlertsScreenState extends State<AlertsScreen> {
   List<AlertItem> get _filteredAlerts =>
       AlertPresentation.filterByTab(_alerts, _selectedTab);
 
-  Widget _buildAlertList() {
-    if (_isLoading && _alerts.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 120),
-          Center(child: CircularProgressIndicator()),
-        ],
-      );
-    }
-
-    if (_filteredAlerts.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          AlertsEmptyState(tab: _selectedTab),
-        ],
-      );
-    }
-
-    if (_selectedTab == AlertTab.all) {
-      return AlertsGroupedList(alerts: _filteredAlerts);
-    }
-
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenHorizontal,
-        0,
-        AppSpacing.screenHorizontal,
-        AppSpacing.lg,
-      ),
-      itemCount: _filteredAlerts.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        return AlertCard(alert: _filteredAlerts[index]);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final filteredCount = _filteredAlerts.length;
 
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpacing.md),
-            AlertsScreenHeader(onFilterTap: _openFilterSheet),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              AlertStrings.filterSummary(_selectedTab.label, filteredCount),
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySecondary.copyWith(fontSize: 13),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadAlerts,
-                child: _buildAlertList(),
+    return TabScreenScaffold(
+      backgroundColor: AppColors.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          TabScreenHeader(
+            title: AlertStrings.screenTitle,
+            trailing: InkWell(
+              onTap: _openFilterSheet,
+              borderRadius: BorderRadius.circular(8),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(Icons.tune, size: 24),
               ),
             ),
-            if (_inmetHasError && _alerts.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenHorizontal,
-                  0,
-                  AppSpacing.screenHorizontal,
-                  AppSpacing.sm,
-                ),
-                child: Text(
-                  AlertStrings.inmetLoadError,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySecondary.copyWith(
-                    color: AppColors.riskHigh,
-                    fontSize: 13,
-                  ),
-                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            AlertStrings.filterSummary(_selectedTab.label, filteredCount),
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySecondary.copyWith(fontSize: 13),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadAlerts,
+              child: AlertsListContent(
+                isLoading: _isLoading,
+                alerts: _alerts,
+                selectedTab: _selectedTab,
               ),
-          ],
-        ),
+            ),
+          ),
+          if (_inmetHasError && _alerts.isNotEmpty)
+            InlineErrorBanner(message: AlertStrings.inmetLoadError),
+        ],
       ),
     );
   }
