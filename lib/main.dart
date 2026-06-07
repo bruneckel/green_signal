@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'app.dart';
 import 'services/address/viacep_client.dart';
 import 'services/auth/local_auth_repository.dart';
-import 'services/environment/device_location_service.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
 import 'services/environment/unified_location_resolver.dart';
@@ -28,9 +27,7 @@ Future<void> main() async {
     openMeteoClient: openMeteoClient,
     inpeFocosClient: inpeFocosClient,
   );
-  const deviceLocationService = GeolocatorDeviceLocationService();
   final locationResolver = UnifiedLocationResolver(
-    deviceLocation: deviceLocationService,
     geocodingClient: geocodingClient,
   );
   final viaCepClient = LiveViaCepClient();
@@ -41,7 +38,6 @@ Future<void> main() async {
       mapRepository: mapRepository,
       environmentalRepository: environmentalRepository,
       locationResolver: locationResolver,
-      deviceLocationService: deviceLocationService,
       viaCepClient: viaCepClient,
     ),
   );

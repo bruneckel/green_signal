@@ -8,10 +8,10 @@ import 'package:green_signal/core/constants/community_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
+import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/services/address/viacep_client.dart';
 import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
-import 'package:green_signal/services/environment/device_location_service.dart';
 import 'package:green_signal/services/environment/environmental_repository.dart';
 import 'package:green_signal/services/environment/unified_location_resolver.dart';
 import 'package:green_signal/services/map/map_repository.dart';
@@ -36,14 +36,18 @@ FakeEnvironmentalRepository _fakeEnvironmentalRepository({
   return FakeEnvironmentalRepository(delay: delay);
 }
 
-const _fakeDeviceLocationService = FakeDeviceLocationService();
+final _fakeUnifiedLocationResolver = UnifiedLocationResolver();
 
-UnifiedLocationResolver _fakeUnifiedLocationResolver({
-  DeviceLocationService? deviceLocation,
-}) {
-  return UnifiedLocationResolver(
-    deviceLocation: deviceLocation ?? _fakeDeviceLocationService,
-  );
+class _DelayedUnifiedLocationResolver extends UnifiedLocationResolver {
+  _DelayedUnifiedLocationResolver({required this.delay});
+
+  final Duration delay;
+
+  @override
+  Future<ResolvedLocation> resolve(AuthRepository auth) async {
+    await Future<void>.delayed(delay);
+    return super.resolve(auth);
+  }
 }
 
 const _fakeViaCepClient = FakeViaCepClient(result: FakeViaCepClient.fozSample);
@@ -53,7 +57,6 @@ Widget _buildApp({
   AuthRepository? authRepository,
   EnvironmentalRepository? environmentalRepository,
   UnifiedLocationResolver? locationResolver,
-  DeviceLocationService? deviceLocationService,
   ViaCepClient? viaCepClient,
 }) {
   return GreenSignalApp(
@@ -61,11 +64,7 @@ Widget _buildApp({
     authRepository: authRepository ?? _fakeAuthRepository(),
     environmentalRepository:
         environmentalRepository ?? _fakeEnvironmentalRepository(),
-    locationResolver: locationResolver ??
-        _fakeUnifiedLocationResolver(
-          deviceLocation: deviceLocationService,
-        ),
-    deviceLocationService: deviceLocationService ?? _fakeDeviceLocationService,
+    locationResolver: locationResolver ?? _fakeUnifiedLocationResolver,
     viaCepClient: viaCepClient ?? _fakeViaCepClient,
   );
 }
@@ -74,14 +73,14 @@ Future<void> _goToLogin(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
-  DeviceLocationService? deviceLocationService,
+  UnifiedLocationResolver? locationResolver,
   ViaCepClient? viaCepClient,
 }) async {
   await tester.pumpWidget(
     _buildApp(
       mapRepository: mapRepository,
       authRepository: authRepository,
-      deviceLocationService: deviceLocationService,
+      locationResolver: locationResolver,
       viaCepClient: viaCepClient,
     ),
   );
@@ -94,13 +93,13 @@ Future<void> _loginAndGoHome(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
-  DeviceLocationService? deviceLocationService,
+  UnifiedLocationResolver? locationResolver,
 }) async {
   await _goToLogin(
     tester,
     mapRepository: mapRepository,
     authRepository: authRepository,
-    deviceLocationService: deviceLocationService,
+    locationResolver: locationResolver,
   );
 
   await tester.enterText(
@@ -270,8 +269,8 @@ void main() {
       mapRepository: _fakeMapRepository(
         delay: const Duration(milliseconds: 500),
       ),
-      deviceLocationService: const FakeDeviceLocationService(
-        delay: Duration(milliseconds: 300),
+      locationResolver: _DelayedUnifiedLocationResolver(
+        delay: const Duration(milliseconds: 300),
       ),
     );
 

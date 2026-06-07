@@ -67,22 +67,16 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _resolveMapCenter() async {
-    final result = await widget.locationResolver.resolveWithMeta(
+    final location = await widget.locationResolver.resolve(
       widget.authRepository,
     );
 
     if (!mounted) return;
 
     setState(() {
-      _mapCenter = result.location.position;
+      _mapCenter = location.position;
       _isLocating = false;
     });
-
-    if (!result.usedGps) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(MapStrings.locationDeniedNotice)),
-      );
-    }
   }
 
   @override

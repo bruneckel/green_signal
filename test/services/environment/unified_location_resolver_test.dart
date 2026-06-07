@@ -1,24 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:green_signal/models/map_layer_data.dart';
-import 'package:green_signal/models/user_account.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
-import 'package:green_signal/services/environment/device_location_service.dart';
 import 'package:green_signal/services/environment/geocoding_client.dart';
 import 'package:green_signal/services/environment/unified_location_resolver.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:latlong2/latlong.dart';
 
 void main() {
-  const gpsPosition = LatLng(-25.5128666, -54.5556132);
-
   group('UnifiedLocationResolver', () {
-    test('uses GPS with profile labels when available', () async {
+    test('uses stored registration coordinates with profile labels', () async {
       final auth = FakeAuthRepository();
       await auth.login(email: 'user@example.com', password: '123456');
 
       final resolver = UnifiedLocationResolver(
-        deviceLocation: const FakeDeviceLocationService(position: gpsPosition),
         geocodingClient: GeocodingClient(
           client: MockClient((_) async => http.Response('', 500)),
         ),
@@ -26,13 +20,12 @@ void main() {
 
       final result = await resolver.resolveWithMeta(auth);
 
-      expect(result.usedGps, isTrue);
-      expect(result.location.position, gpsPosition);
+      expect(result.location.position.latitude, closeTo(-23.5505, 0.001));
       expect(result.location.neighborhood, 'Vila Madalena');
       expect(result.location.label, 'São Paulo, SP');
     });
 
-    test('falls back to stored coordinates when GPS unavailable', () async {
+    test('uses registration coords for Foz user profile', () async {
       final auth = FakeAuthRepository();
       await auth.register(
         name: 'Foz User',
@@ -49,7 +42,6 @@ void main() {
       await auth.login(email: 'foz@test.com', password: '123456');
 
       final resolver = UnifiedLocationResolver(
-        deviceLocation: const FakeDeviceLocationService(),
         geocodingClient: GeocodingClient(
           client: MockClient((_) async => http.Response('', 500)),
         ),
@@ -57,15 +49,13 @@ void main() {
 
       final result = await resolver.resolveWithMeta(auth);
 
-      expect(result.usedGps, isFalse);
       expect(result.location.position.latitude, closeTo(-25.5128666, 0.001));
       expect(result.location.neighborhood, 'Centro');
       expect(result.location.label, 'Foz do Iguaçu, PR');
     });
 
-    test('falls back to São Paulo when no GPS and no user coords', () async {
+    test('falls back to São Paulo when no user coords', () async {
       final resolver = UnifiedLocationResolver(
-        deviceLocation: const FakeDeviceLocationService(),
         geocodingClient: GeocodingClient(
           client: MockClient((_) async => http.Response('', 500)),
         ),
@@ -73,7 +63,6 @@ void main() {
 
       final result = await resolver.resolveWithMeta(FakeAuthRepository());
 
-      expect(result.usedGps, isFalse);
       expect(result.location.position, MapLayerData.saoPauloCenter);
     });
   });

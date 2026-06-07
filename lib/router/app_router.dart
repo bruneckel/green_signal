@@ -12,7 +12,6 @@ import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/address/viacep_client.dart';
 import '../services/auth/auth_repository.dart';
-import '../services/environment/device_location_service.dart';
 import '../services/environment/environmental_repository.dart';
 import '../services/environment/geocoding_client.dart';
 import '../services/environment/unified_location_resolver.dart';
@@ -43,10 +42,7 @@ GoRouter createRouter({
   final mapRepo = mapRepository ?? LiveMapRepository();
   final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
   final unifiedResolver = locationResolver ??
-      UnifiedLocationResolver(
-        deviceLocation: const GeolocatorDeviceLocationService(),
-        geocodingClient: GeocodingClient(),
-      );
+      UnifiedLocationResolver(geocodingClient: GeocodingClient());
   final cepClient = viaCepClient ?? LiveViaCepClient();
 
   return GoRouter(

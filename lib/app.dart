@@ -5,7 +5,6 @@ import 'core/theme/app_theme.dart';
 import 'router/app_router.dart';
 import 'services/address/viacep_client.dart';
 import 'services/auth/auth_repository.dart';
-import 'services/environment/device_location_service.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
 import 'services/environment/unified_location_resolver.dart';
@@ -17,18 +16,12 @@ class GreenSignalApp extends StatelessWidget {
     MapRepository? mapRepository,
     EnvironmentalRepository? environmentalRepository,
     UnifiedLocationResolver? locationResolver,
-    DeviceLocationService? deviceLocationService,
     ViaCepClient? viaCepClient,
   }) {
     final mapRepo = mapRepository ?? LiveMapRepository();
     final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
-    final deviceLocation =
-        deviceLocationService ?? const GeolocatorDeviceLocationService();
     final unifiedResolver = locationResolver ??
-        UnifiedLocationResolver(
-          deviceLocation: deviceLocation,
-          geocodingClient: GeocodingClient(),
-        );
+        UnifiedLocationResolver(geocodingClient: GeocodingClient());
     final cepClient = viaCepClient ?? LiveViaCepClient();
 
     return GreenSignalApp._(
@@ -36,7 +29,6 @@ class GreenSignalApp extends StatelessWidget {
       mapRepository: mapRepo,
       environmentalRepository: envRepo,
       locationResolver: unifiedResolver,
-      deviceLocationService: deviceLocation,
       viaCepClient: cepClient,
       router: createRouter(
         authRepository: authRepository,
@@ -53,7 +45,6 @@ class GreenSignalApp extends StatelessWidget {
     required this.mapRepository,
     required this.environmentalRepository,
     required this.locationResolver,
-    required this.deviceLocationService,
     required this.viaCepClient,
     required GoRouter router,
   }) : _router = router;
@@ -62,7 +53,6 @@ class GreenSignalApp extends StatelessWidget {
   final MapRepository mapRepository;
   final EnvironmentalRepository environmentalRepository;
   final UnifiedLocationResolver locationResolver;
-  final DeviceLocationService deviceLocationService;
   final ViaCepClient viaCepClient;
   final GoRouter _router;
 

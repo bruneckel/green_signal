@@ -4,27 +4,19 @@ import '../../models/environmental_snapshot.dart';
 import '../../models/map_layer_data.dart';
 import '../../models/user_account.dart';
 import '../auth/auth_repository.dart';
-import 'device_location_service.dart';
 import 'geocoding_client.dart';
 import 'location_resolver.dart';
 
 class UnifiedLocationResult {
-  const UnifiedLocationResult({
-    required this.location,
-    required this.usedGps,
-  });
+  const UnifiedLocationResult({required this.location});
 
   final ResolvedLocation location;
-  final bool usedGps;
 }
 
 class UnifiedLocationResolver implements LocationResolver {
-  UnifiedLocationResolver({
-    required this.deviceLocation,
-    GeocodingClient? geocodingClient,
-  }) : _geocodingClient = geocodingClient ?? GeocodingClient();
+  UnifiedLocationResolver({GeocodingClient? geocodingClient})
+      : _geocodingClient = geocodingClient ?? GeocodingClient();
 
-  final DeviceLocationService deviceLocation;
   final GeocodingClient _geocodingClient;
 
   @override
@@ -36,19 +28,10 @@ class UnifiedLocationResolver implements LocationResolver {
   Future<UnifiedLocationResult> resolveWithMeta(AuthRepository auth) async {
     final user = auth.currentUser;
 
-    final gps = await deviceLocation.getCurrentPosition();
-    if (gps != null) {
-      return UnifiedLocationResult(
-        location: _locationFromProfile(gps, user),
-        usedGps: true,
-      );
-    }
-
     final stored = user?.storedPosition;
     if (stored != null) {
       return UnifiedLocationResult(
         location: _locationFromProfile(stored, user),
-        usedGps: false,
       );
     }
 
@@ -65,7 +48,6 @@ class UnifiedLocationResolver implements LocationResolver {
               ? _neighborhood(user)
               : geocoded.neighborhood,
         ),
-        usedGps: false,
       );
     }
 
@@ -75,7 +57,6 @@ class UnifiedLocationResolver implements LocationResolver {
         label: 'São Paulo, SP',
         neighborhood: 'São Paulo',
       ),
-      usedGps: false,
     );
   }
 
@@ -84,7 +65,7 @@ class UnifiedLocationResolver implements LocationResolver {
       position: position,
       label: _profileLabel(user).isNotEmpty
           ? _profileLabel(user)
-          : 'Localização atual',
+          : 'Localização cadastrada',
       neighborhood: _neighborhood(user).isNotEmpty
           ? _neighborhood(user)
           : '—',
