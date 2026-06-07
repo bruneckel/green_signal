@@ -54,7 +54,4 @@ abstract final class AppStrings {
 
   static const profile = 'Perfil';
   static const logout = 'Sair';
-
-  static const mockUserName = 'Bruno Neckel';
-  static const mockUserEmail = 'bruno@email.com';
 }

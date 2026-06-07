@@ -38,12 +38,8 @@ class EnvironmentalSnapshot {
     return EnvironmentalSnapshot(
       position: position,
       locationLabel: locationLabel,
-      riskScore: HomeData.mock.riskScore,
-      riskLevel: HomeData.mock.riskLevel,
-      aqi: 68,
-      temperatureC: 31,
-      precipitationMm: 4,
-      hotspotCount: 2,
+      riskScore: 0,
+      riskLevel: RiskLevel.low,
       fetchedAt: DateTime.now(),
       hasError: true,
     );

@@ -116,7 +116,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final snapshot = _snapshot;
-    final locationLabel = _location?.label ?? HomeData.mock.city;
+    final location = _location;
+    final isLocationLoading = _isLoading || location == null;
 
     return TabScreenScaffold(
       backgroundColor: AppColors.surfaceMuted,
@@ -133,11 +134,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () => context.go(AppRoutes.alerts),
               ),
             ),
-            HomeLocationBar(
-              city: locationLabel,
-              isExploring: widget.locationResolver.isExploring,
-              onTap: _openCityPicker,
-            ),
+            if (isLocationLoading)
+              const HomeLocationBarSkeleton()
+            else
+              HomeLocationBar(
+                city: location.label,
+                isExploring: widget.locationResolver.isExploring,
+                onTap: _openCityPicker,
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenHorizontal,

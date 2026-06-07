@@ -154,8 +154,8 @@ class FakeEnvironmentalRepository implements EnvironmentalRepository {
   static final _defaultSnapshot = EnvironmentalSnapshot(
     position: const LatLng(-23.5505, -46.6333),
     locationLabel: 'São Paulo, SP',
-    riskScore: HomeData.mock.riskScore,
-    riskLevel: HomeData.mock.riskLevel,
+    riskScore: 83,
+    riskLevel: RiskLevel.fromScore(83),
     aqi: 68,
     temperatureC: 31,
     precipitationMm: 4,

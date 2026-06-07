@@ -45,36 +45,3 @@ class IndicatorItem {
   final IconData icon;
   final String label;
 }
-
-class HomeData {
-  const HomeData({
-    required this.city,
-    required this.riskScore,
-    required this.alerts,
-    required this.indicators,
-  });
-
-  final String city;
-  final int riskScore;
-  final List<ActiveAlert> alerts;
-  final List<IndicatorItem> indicators;
-
-  RiskLevel get riskLevel => RiskLevel.fromScore(riskScore);
-
-  static const mock = HomeData(
-    city: 'São Paulo, SP',
-    riskScore: 83,
-    alerts: [
-      ActiveAlert(
-        message: 'Risco de chuva intensa nas próximas 6 horas.',
-        region: 'Zona Norte',
-      ),
-    ],
-    indicators: [
-      IndicatorItem(icon: Icons.air, label: 'Ar Ruim'),
-      IndicatorItem(icon: Icons.thermostat_outlined, label: 'Temperatura 32°C'),
-      IndicatorItem(icon: Icons.grain, label: 'Chuva 60%'),
-      IndicatorItem(icon: Icons.local_fire_department_outlined, label: 'Focos de Incêndio 3'),
-    ],
-  );
-}

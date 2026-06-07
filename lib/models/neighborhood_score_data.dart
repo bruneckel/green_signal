@@ -28,42 +28,4 @@ class NeighborhoodScoreData {
   final List<EnvironmentalIndicator> indicators;
 
   RiskLevel get riskLevel => RiskLevel.fromScore(riskScore);
-
-  static const mock = NeighborhoodScoreData(
-    neighborhood: 'Vila Madalena',
-    city: 'São Paulo, SP',
-    riskScore: 65,
-    indicators: [
-      EnvironmentalIndicator(
-        icon: Icons.air,
-        label: 'Qualidade do Ar',
-        value: 'Moderada AQI 68',
-      ),
-      EnvironmentalIndicator(
-        icon: Icons.thermostat_outlined,
-        label: 'Temperatura',
-        value: '31°C',
-      ),
-      EnvironmentalIndicator(
-        icon: Icons.water_drop_outlined,
-        label: 'Umidade',
-        value: '54%',
-      ),
-      EnvironmentalIndicator(
-        icon: Icons.grain,
-        label: 'Chuva',
-        value: '40%',
-      ),
-      EnvironmentalIndicator(
-        icon: Icons.flood_outlined,
-        label: 'Risco de Enchente',
-        value: 'Médio',
-      ),
-      EnvironmentalIndicator(
-        icon: Icons.local_fire_department_outlined,
-        label: 'Focos de Incêndio',
-        value: '2',
-      ),
-    ],
-  );
 }

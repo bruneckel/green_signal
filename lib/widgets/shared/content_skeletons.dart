@@ -229,6 +229,29 @@ class MapAreaSkeleton extends StatelessWidget {
   }
 }
 
+class HomeLocationBarSkeleton extends StatelessWidget {
+  const HomeLocationBarSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SkeletonPulse(
+      child: Padding(
+        padding: EdgeInsets.only(top: AppSpacing.md),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SkeletonCircle(size: 18),
+            SizedBox(width: 4),
+            SkeletonBox(width: 140, height: 14),
+            SizedBox(width: 4),
+            SkeletonCircle(size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class HomeScreenSkeleton extends StatelessWidget {
   const HomeScreenSkeleton({super.key});
 
