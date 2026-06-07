@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/alerts_config.dart';
-import '../../core/constants/home_strings.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../models/environmental_snapshot.dart';
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const SizedBox(height: AppSpacing.md),
             TabScreenHeader(
-              title: HomeStrings.navHome,
+              title: AppStrings.appName,
               trailing: HeaderIconButton(
                 icon: Icons.notifications_outlined,
                 onPressed: () => context.go(AppRoutes.alerts),

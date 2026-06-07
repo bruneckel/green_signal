@@ -1,5 +1,5 @@
 abstract final class AppStrings {
-  static const appName = 'GreenSignal';
+  static const appName = 'Green Signal';
   static const tagline = 'Monitorando riscos ambientais em tempo real.';
 
   static const welcomeTitle = 'Bem-vindo!';
