@@ -6,6 +6,7 @@ import 'package:green_signal/core/constants/alert_strings.dart';
 import 'package:green_signal/core/constants/app_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
+import 'package:green_signal/core/constants/score_strings.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -169,5 +170,34 @@ void main() {
 
     expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
     expect(find.text('Chuva intensa'), findsOneWidget);
+  });
+
+  testWidgets('Bottom nav opens score screen with mock data', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.text(HomeStrings.navScore));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ScoreStrings.screenTitle), findsOneWidget);
+    expect(find.textContaining('Vila Madalena'), findsOneWidget);
+    expect(find.text('65'), findsOneWidget);
+    expect(find.text('Moderada AQI 68'), findsOneWidget);
+    expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
+  });
+
+  testWidgets('Score screen filter shows coming soon snackbar', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.text(HomeStrings.navScore));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.filter_list));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.featureComingSoon), findsOneWidget);
   });
 }

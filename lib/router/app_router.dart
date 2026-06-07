@@ -7,6 +7,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
+import '../screens/score/score_screen.dart';
 import '../screens/shared/placeholder_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/map/map_repository.dart';
@@ -85,9 +86,7 @@ GoRouter createRouter({MapRepository? mapRepository}) {
               GoRoute(
                 path: AppRoutes.score,
                 name: 'score',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: HomeStrings.navScore,
-                ),
+                builder: (context, state) => const ScoreScreen(),
               ),
             ],
           ),
