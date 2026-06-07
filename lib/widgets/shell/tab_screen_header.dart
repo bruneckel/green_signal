@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../shared/header_icon_button.dart';
 
 class TabScreenHeader extends StatelessWidget {
   const TabScreenHeader({
     super.key,
     required this.title,
-    this.leading,
     this.trailing,
   });
 
   final String title;
-  final Widget? leading;
   final Widget? trailing;
 
   static const _slotSize = 32.0;
@@ -26,7 +25,10 @@ class TabScreenHeader extends StatelessWidget {
           SizedBox(
             width: _slotSize,
             height: _slotSize,
-            child: leading,
+            child: HeaderIconButton(
+              icon: Icons.menu,
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
           ),
           Expanded(
             child: Text(

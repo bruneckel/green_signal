@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/alerts_config.dart';
+import '../../core/constants/home_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../models/environmental_snapshot.dart';
 import '../../models/home_data.dart';
+import '../../router/app_router.dart';
 import '../../services/alerts/alert_presentation.dart';
 import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
@@ -12,10 +15,12 @@ import '../../services/environment/environmental_repository.dart';
 import '../../services/environment/location_resolver.dart';
 import '../../services/environment/snapshot_presentation.dart';
 import '../../widgets/home/active_alerts_section.dart';
-import '../../widgets/home/home_header.dart';
+import '../../widgets/home/home_location_bar.dart';
 import '../../widgets/home/indicators_section.dart';
 import '../../widgets/home/risk_score_card.dart';
+import '../../widgets/shared/header_icon_button.dart';
 import '../../widgets/shared/screen_loading_indicator.dart';
+import '../../widgets/shell/tab_screen_header.dart';
 import '../../widgets/shell/tab_screen_scaffold.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -98,7 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppSpacing.md),
-            HomeHeader(city: locationLabel),
+            TabScreenHeader(
+              title: HomeStrings.navHome,
+              trailing: HeaderIconButton(
+                icon: Icons.notifications_outlined,
+                onPressed: () => context.go(AppRoutes.alerts),
+              ),
+            ),
+            HomeLocationBar(city: locationLabel),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenHorizontal,

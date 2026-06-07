@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/community_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../models/community_report.dart';
+import '../../router/app_router.dart';
 import '../../widgets/community/community_filter_chips.dart';
 import '../../widgets/community/community_location_selector.dart';
 import '../../widgets/community/community_report_card.dart';
-import '../../widgets/community/community_screen_header.dart';
+import '../../widgets/shared/header_icon_button.dart';
+import '../../widgets/shell/tab_screen_header.dart';
+import '../../widgets/shell/tab_screen_scaffold.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key, this.reports = CommunityReportsData.mock});
@@ -30,49 +34,52 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget build(BuildContext context) {
     final filtered = _filteredReports;
 
-    return ColoredBox(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpacing.md),
-            const CommunityScreenHeader(),
-            const CommunityLocationSelector(),
-            CommunityFilterChips(
-              selectedFilter: _selectedFilter,
-              onFilterChanged: (filter) =>
-                  setState(() => _selectedFilter = filter),
+    return TabScreenScaffold(
+      backgroundColor: AppColors.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          TabScreenHeader(
+            title: CommunityStrings.screenTitle,
+            trailing: HeaderIconButton(
+              icon: Icons.add_circle_outline,
+              onPressed: () => context.push(AppRoutes.communityNewReport),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Text(
-                        CommunityStrings.emptyList,
-                        style: AppTypography.bodySecondary.copyWith(
-                          fontSize: 14,
-                        ),
+          ),
+          const CommunityLocationSelector(),
+          CommunityFilterChips(
+            selectedFilter: _selectedFilter,
+            onFilterChanged: (filter) =>
+                setState(() => _selectedFilter = filter),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      CommunityStrings.emptyList,
+                      style: AppTypography.bodySecondary.copyWith(
+                        fontSize: 14,
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenHorizontal,
-                        0,
-                        AppSpacing.screenHorizontal,
-                        AppSpacing.lg,
-                      ),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) {
-                        return CommunityReportCard(report: filtered[index]);
-                      },
                     ),
-            ),
-          ],
-        ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.screenHorizontal,
+                      0,
+                      AppSpacing.screenHorizontal,
+                      AppSpacing.lg,
+                    ),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      return CommunityReportCard(report: filtered[index]);
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

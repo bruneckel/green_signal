@@ -13,6 +13,7 @@ import '../../services/environment/environmental_repository.dart';
 import '../../services/environment/location_resolver.dart';
 import '../../widgets/alerts/alert_filter_sheet.dart';
 import '../../widgets/alerts/alerts_list_content.dart';
+import '../../widgets/shared/header_icon_button.dart';
 import '../../widgets/shared/inline_error_banner.dart';
 import '../../widgets/shell/tab_screen_header.dart';
 import '../../widgets/shell/tab_screen_scaffold.dart';
@@ -120,13 +121,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
           const SizedBox(height: AppSpacing.md),
           TabScreenHeader(
             title: AlertStrings.screenTitle,
-            trailing: InkWell(
-              onTap: _openFilterSheet,
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.tune, size: 24),
-              ),
+            trailing: HeaderIconButton(
+              icon: Icons.tune,
+              onPressed: _openFilterSheet,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
