@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
@@ -10,12 +9,13 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/cep_input_formatter.dart';
 import '../../core/utils/form_utils.dart';
 import '../../core/utils/phone_input_formatter.dart';
-import '../../core/utils/validators.dart';
 import '../../models/user_account.dart';
 import '../../services/address/viacep_client.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../widgets/address/address_form_fields.dart';
-import '../../widgets/app_text_field.dart';
+import '../../widgets/forms/form_screen_header.dart';
+import '../../widgets/forms/form_section_title.dart';
+import '../../widgets/forms/personal_data_form_fields.dart';
 import '../../widgets/primary_button.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -34,6 +34,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formController = ValidatedFormController();
   final _addressFormKey = GlobalKey<AddressFormFieldsState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -47,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _stateController = TextEditingController();
 
   final _nameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
   final _phoneFocusNode = FocusNode();
   final _cepFocusNode = FocusNode();
   final _streetFocusNode = FocusNode();
@@ -56,9 +58,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   late final ViaCepClient _viaCepClient;
 
-  bool _attemptedSubmit = false;
-  bool _isLoading = false;
-  bool _cepResolved = false;
   bool _initialized = false;
 
   @override
@@ -83,6 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _cityController.dispose();
     _stateController.dispose();
     _nameFocusNode.dispose();
+    _emailFocusNode.dispose();
     _phoneFocusNode.dispose();
     _cepFocusNode.dispose();
     _streetFocusNode.dispose();
@@ -111,7 +111,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _neighborhoodController.text = user.neighborhood;
       _cityController.text = user.city;
       _stateController.text = user.state;
-      _cepResolved = true;
     } else {
       _cepController.clear();
       _streetController.clear();
@@ -120,54 +119,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _neighborhoodController.clear();
       _cityController.clear();
       _stateController.clear();
-      _cepResolved = false;
     }
 
     _initialized = true;
     if (mounted) setState(() {});
   }
 
-  Future<void> _submit() async {
-    unfocus(context);
-    setState(() => _attemptedSubmit = true);
-
+  bool _isCepResolved() {
     final user = widget.authRepository.currentUser;
-    final cepResolved = user?.hasStructuredAddress == true ||
-        _addressFormKey.currentState?.cepResolved == true ||
-        _cepResolved;
+    return user?.hasStructuredAddress == true ||
+        _addressFormKey.currentState?.cepResolved == true;
+  }
 
-    if (!cepResolved) {
-      _addressFormKey.currentState?.showCepRequiredError();
-    }
+  Future<void> _submit() async {
+    await _formController.run(
+      context: context,
+      formKey: _formKey,
+      notify: () => setState(() {}),
+      beforeValidate: () {
+        if (!_isCepResolved()) {
+          _addressFormKey.currentState?.showCepRequiredError();
+        }
+      },
+      extraValidation: _isCepResolved,
+      action: () async {
+        await widget.authRepository.updateProfile(
+          name: _nameController.text,
+          phone: _phoneController.text,
+          cep: _cepController.text,
+          street: _streetController.text,
+          number: _numberController.text,
+          complement: optionalTrim(_complementController.text),
+          neighborhood: _neighborhoodController.text,
+          city: _cityController.text,
+          state: _stateController.text,
+        );
 
-    if (!_formKey.currentState!.validate() || !cepResolved) return;
+        if (!mounted) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      await widget.authRepository.updateProfile(
-        name: _nameController.text,
-        phone: _phoneController.text,
-        cep: _cepController.text,
-        street: _streetController.text,
-        number: _numberController.text,
-        complement: _complementController.text.trim().isEmpty
-            ? null
-            : _complementController.text,
-        neighborhood: _neighborhoodController.text,
-        city: _cityController.text,
-        state: _stateController.text,
-      );
-
-      if (!mounted) return;
-
-      showAppSnackBar(context, ProfileStrings.saveSuccess);
-      context.pop();
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+        showAppSnackBar(context, ProfileStrings.saveSuccess);
+        context.pop();
+      },
+    );
   }
 
   @override
@@ -188,49 +181,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: SafeArea(
           child: Form(
             key: _formKey,
-            autovalidateMode: _attemptedSubmit
-                ? AutovalidateMode.onUserInteraction
-                : AutovalidateMode.disabled,
+            autovalidateMode: _formController.autovalidateMode,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xs,
-                    AppSpacing.sm,
-                    AppSpacing.screenHorizontal,
-                    0,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back),
-                        color: AppColors.textPrimary,
-                      ),
-                      const Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              ProfileStrings.screenTitle,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.appBarTitle,
-                            ),
-                            SizedBox(height: AppSpacing.xs),
-                            Text(
-                              ProfileStrings.subtitle,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
+                FormScreenHeader(
+                  title: ProfileStrings.screenTitle,
+                  subtitle: ProfileStrings.subtitle,
+                  onBack: () => context.pop(),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -275,64 +233,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sectionGap),
-                        Text(
-                          AppStrings.personalDataSection,
-                          style: AppTypography.sectionTitle,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          controller: _nameController,
-                          focusNode: _nameFocusNode,
-                          hintText: AppStrings.fullName,
-                          prefixIcon: Icons.person_outline,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.words,
-                          onFieldSubmitted: (_) =>
-                              FocusScope.of(context).requestFocus(_phoneFocusNode),
-                          validator: (value) => Validators.required(
-                            value,
-                            fieldName: AppStrings.fullName,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          controller: _emailController,
-                          hintText: AppStrings.email,
-                          prefixIcon: Icons.email_outlined,
-                          readOnly: true,
-                          enabled: false,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          ProfileStrings.emailReadOnlyHint,
-                          style: AppTypography.bodySecondary.copyWith(
-                            fontSize: 12,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          controller: _phoneController,
-                          focusNode: _phoneFocusNode,
-                          hintText: AppStrings.phone,
-                          prefixIcon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(11),
-                            PhoneInputFormatter(),
-                          ],
-                          onFieldSubmitted: (_) =>
-                              FocusScope.of(context).requestFocus(_cepFocusNode),
-                          validator: Validators.phone,
+                        PersonalDataFormFields(
+                          nameController: _nameController,
+                          emailController: _emailController,
+                          phoneController: _phoneController,
+                          nameFocusNode: _nameFocusNode,
+                          emailFocusNode: _emailFocusNode,
+                          phoneFocusNode: _phoneFocusNode,
+                          emailReadOnly: true,
+                          onNextAfterPhone: _cepFocusNode,
                         ),
                         const SizedBox(height: AppSpacing.sectionGap),
-                        Text(
-                          AppStrings.addressSection,
-                          style: AppTypography.sectionTitle,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
+                        FormSectionTitle(title: AppStrings.addressSection),
                         AddressFormFields(
                           key: _addressFormKey,
                           cepController: _cepController,
@@ -349,15 +261,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           neighborhoodFocusNode: _neighborhoodFocusNode,
                           viaCepClient: _viaCepClient,
                           initialCepResolved: user.hasStructuredAddress,
-                          onCepStateChanged: (state) {
-                            setState(() => _cepResolved = state.cepResolved);
-                          },
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         PrimaryButton(
                           label: ProfileStrings.save,
-                          onPressed: _isLoading ? null : _submit,
-                          isLoading: _isLoading,
+                          onPressed: _formController.isLoading ? null : _submit,
+                          isLoading: _formController.isLoading,
                         ),
                       ],
                     ),

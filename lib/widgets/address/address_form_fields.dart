@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/cep_input_formatter.dart';
+import '../../core/utils/form_utils.dart';
 import '../../core/utils/validators.dart';
 import '../../services/address/viacep_client.dart';
 import '../app_text_field.dart';
@@ -26,7 +27,6 @@ class AddressFormFields extends StatefulWidget {
     required this.viaCepClient,
     this.initialCepResolved = false,
     this.onNextAfterNeighborhood,
-    this.onCepStateChanged,
   });
 
   final TextEditingController cepController;
@@ -44,20 +44,9 @@ class AddressFormFields extends StatefulWidget {
   final ViaCepClient viaCepClient;
   final bool initialCepResolved;
   final FocusNode? onNextAfterNeighborhood;
-  final ValueChanged<AddressFormCepState>? onCepStateChanged;
 
   @override
   State<AddressFormFields> createState() => AddressFormFieldsState();
-}
-
-class AddressFormCepState {
-  const AddressFormCepState({
-    required this.cepResolved,
-    this.cepError,
-  });
-
-  final bool cepResolved;
-  final String? cepError;
 }
 
 class AddressFormFieldsState extends State<AddressFormFields> {
@@ -82,13 +71,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
 
   void showCepRequiredError() {
     setState(() => _cepError = AppStrings.cepNotFound);
-    _notifyCepState();
-  }
-
-  void _notifyCepState() {
-    widget.onCepStateChanged?.call(
-      AddressFormCepState(cepResolved: _cepResolved, cepError: _cepError),
-    );
   }
 
   void _onCepChanged() {
@@ -104,7 +86,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
         widget.cityController.clear();
         widget.stateController.clear();
       });
-      _notifyCepState();
     }
   }
 
@@ -113,7 +94,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
       _isFetchingCep = true;
       _cepError = null;
     });
-    _notifyCepState();
 
     final result = await widget.viaCepClient.fetch(digits);
 
@@ -125,7 +105,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
         _cepResolved = false;
         _cepError = AppStrings.cepNotFound;
       });
-      _notifyCepState();
       return;
     }
 
@@ -141,11 +120,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
         widget.complementController.text = result.complement;
       }
     });
-    _notifyCepState();
-  }
-
-  void _focusNext(FocusNode node) {
-    FocusScope.of(context).requestFocus(node);
   }
 
   @override
@@ -164,7 +138,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             LengthLimitingTextInputFormatter(8),
             CepInputFormatter(),
           ],
-          onFieldSubmitted: (_) => _focusNext(widget.streetFocusNode),
+          onFieldSubmitted: (_) => focusNext(context, widget.streetFocusNode),
           validator: Validators.cep,
           suffixIcon: _isFetchingCep
               ? const SizedBox(
@@ -203,7 +177,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
                 prefixIcon: Icons.signpost_outlined,
                 textInputAction: TextInputAction.next,
                 enabled: _cepResolved,
-                onFieldSubmitted: (_) => _focusNext(widget.numberFocusNode),
+                onFieldSubmitted: (_) => focusNext(context, widget.numberFocusNode),
                 validator: (value) =>
                     Validators.required(value, fieldName: AppStrings.street),
               ),
@@ -217,7 +191,8 @@ class AddressFormFieldsState extends State<AddressFormFields> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 enabled: _cepResolved,
-                onFieldSubmitted: (_) => _focusNext(widget.complementFocusNode),
+                onFieldSubmitted: (_) =>
+                    focusNext(context, widget.complementFocusNode),
                 validator: (value) =>
                     Validators.required(value, fieldName: AppStrings.number),
               ),
@@ -232,7 +207,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
           prefixIcon: Icons.apartment_outlined,
           textInputAction: TextInputAction.next,
           enabled: _cepResolved,
-          onFieldSubmitted: (_) => _focusNext(widget.neighborhoodFocusNode),
+          onFieldSubmitted: (_) => focusNext(context, widget.neighborhoodFocusNode),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -245,7 +220,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
           onFieldSubmitted: (_) {
             final next = widget.onNextAfterNeighborhood;
             if (next != null) {
-              _focusNext(next);
+              focusNext(context, next);
             }
           },
           validator: (value) => Validators.required(

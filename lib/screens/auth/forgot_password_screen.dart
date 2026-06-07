@@ -5,10 +5,9 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/form_utils.dart';
-import '../../core/utils/validators.dart';
 import '../../services/auth/auth_repository.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_scaffold.dart';
+import '../../widgets/forms/email_text_field.dart';
 import '../../widgets/primary_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -22,11 +21,10 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formController = ValidatedFormController();
   final _emailController = TextEditingController();
   final _emailFocusNode = FocusNode();
 
-  bool _attemptedSubmit = false;
-  bool _isLoading = false;
   bool _submitted = false;
   String _submittedEmail = '';
 
@@ -38,33 +36,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _submit() async {
-    unfocus(context);
-    setState(() => _attemptedSubmit = true);
+    await _formController.run(
+      context: context,
+      formKey: _formKey,
+      notify: () => setState(() {}),
+      action: () async {
+        await widget.authRepository.requestPasswordReset(
+          email: _emailController.text,
+        );
 
-    if (!_formKey.currentState!.validate()) return;
+        if (!mounted) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      await widget.authRepository.requestPasswordReset(
-        email: _emailController.text,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _submitted = true;
-        _submittedEmail = _emailController.text.trim();
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+        setState(() {
+          _submitted = true;
+          _submittedEmail = _emailController.text.trim();
+        });
+      },
+    );
   }
 
   Future<void> _resend() async {
-    setState(() => _isLoading = true);
+    _formController.isLoading = true;
+    setState(() {});
 
     try {
       await widget.authRepository.requestPasswordReset(
@@ -72,7 +65,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        _formController.isLoading = false;
+        setState(() {});
       }
     }
   }
@@ -94,27 +88,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget _buildFormContent() {
     return Form(
       key: _formKey,
-      autovalidateMode: _attemptedSubmit
-          ? AutovalidateMode.onUserInteraction
-          : AutovalidateMode.disabled,
+      autovalidateMode: _formController.autovalidateMode,
       child: Column(
         children: [
-          AppTextField(
+          EmailTextField(
             controller: _emailController,
             focusNode: _emailFocusNode,
-            hintText: AppStrings.email,
-            prefixIcon: Icons.email_outlined,
-            keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.email],
             onFieldSubmitted: (_) => _submit(),
-            validator: Validators.email,
           ),
           const SizedBox(height: AppSpacing.xl),
           PrimaryButton(
             label: AppStrings.sendResetLink,
-            onPressed: _isLoading ? null : _submit,
-            isLoading: _isLoading,
+            onPressed: _formController.isLoading ? null : _submit,
+            isLoading: _formController.isLoading,
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
@@ -133,19 +120,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: AppSpacing.xl),
         PrimaryButton(
           label: AppStrings.backToLogin,
-          onPressed: _isLoading ? null : () => context.pop(),
+          onPressed: _formController.isLoading ? null : () => context.pop(),
           isLoading: false,
         ),
         const SizedBox(height: AppSpacing.sm),
         TextButton(
-          onPressed: _isLoading ? null : _resend,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(AppStrings.resendResetLink),
+          onPressed: _formController.isLoading ? null : _resend,
+          child: const Text(AppStrings.resendResetLink),
         ),
         const SizedBox(height: AppSpacing.lg),
       ],

@@ -98,9 +98,6 @@ GoRouter createRouter({
         name: 'login',
         builder: (context, state) => LoginScreen(
           authRepository: authRepository,
-          mapRepository: mapRepo,
-          environmentalRepository: envRepo,
-          locationResolver: unifiedResolver,
         ),
       ),
       GoRoute(

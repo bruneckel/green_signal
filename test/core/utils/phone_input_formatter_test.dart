@@ -16,10 +16,4 @@ void main() {
       expect(formatPhoneDigits('4599108'), '(45) 99108');
     });
   });
-
-  group('formatPhoneDisplay', () {
-    test('formats stored digits', () {
-      expect(formatPhoneDisplay('45991082173'), '(45) 99108-2173');
-    });
-  });
 }

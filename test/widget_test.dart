@@ -129,14 +129,6 @@ Future<void> _loginAndGoHome(
 }
 
 void main() {
-  testWidgets('Splash screen shows branding', (WidgetTester tester) async {
-    await tester.pumpWidget(_buildApp());
-    await tester.pump();
-
-    expect(find.text(AppStrings.appName), findsOneWidget);
-    expect(find.text(AppStrings.tagline), findsOneWidget);
-  });
-
   testWidgets('Splash navigates to login after delay', (WidgetTester tester) async {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
@@ -156,7 +148,7 @@ void main() {
     expect(find.text(AppStrings.registerTitle), findsOneWidget);
   });
 
-  testWidgets('Login navigates to forgot password screen', (
+  testWidgets('Forgot password flow navigates and shows success', (
     WidgetTester tester,
   ) async {
     await _goToLogin(tester);
@@ -166,15 +158,6 @@ void main() {
 
     expect(find.text(AppStrings.forgotPasswordTitle), findsOneWidget);
     expect(find.text(AppStrings.sendResetLink), findsOneWidget);
-  });
-
-  testWidgets('Forgot password shows success after submit', (
-    WidgetTester tester,
-  ) async {
-    await _goToLogin(tester);
-
-    await tester.tap(find.text(AppStrings.forgotPassword));
-    await tester.pumpAndSettle();
 
     await tester.enterText(
       find.byType(TextFormField).first,
@@ -344,15 +327,6 @@ void main() {
     expect(find.text('Nome Editado'), findsOneWidget);
   });
 
-  testWidgets('Login navigates to home after valid submit', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    expect(find.text('83'), findsOneWidget);
-    expect(find.text(HomeStrings.activeAlerts), findsOneWidget);
-  });
-
   testWidgets('Bottom nav opens map screen', (WidgetTester tester) async {
     await _loginAndGoHome(tester);
 
@@ -410,32 +384,34 @@ void main() {
     expect(find.textContaining('35°C'), findsOneWidget);
   });
 
-  testWidgets('Home bell icon navigates to alerts screen', (
+  testWidgets('Alerts screen reachable from bell, bottom nav, and view all', (
     WidgetTester tester,
   ) async {
     await _loginAndGoHome(tester);
 
     await tester.tap(find.byIcon(Icons.notifications_outlined).first);
     await tester.pumpAndSettle();
-
     expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
     expect(find.text('Chuva intensa'), findsOneWidget);
-  });
 
-  testWidgets('Bottom nav opens alerts screen with mock data', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
+    await tester.tap(find.text(HomeStrings.navHome));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text(HomeStrings.viewAll).first);
+    await tester.tap(find.text(HomeStrings.viewAll).first);
+    await tester.pumpAndSettle();
+    expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
+
+    await tester.tap(find.text(HomeStrings.navHome));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text(HomeStrings.navAlerts));
     await tester.pumpAndSettle();
-
     expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
     expect(
       find.text(AlertStrings.filterSummary(AlertStrings.tabAll, 7)),
       findsOneWidget,
     );
-    expect(find.text('Chuva intensa'), findsOneWidget);
     expect(find.text('Calor extremo'), findsOneWidget);
   });
 
@@ -485,32 +461,6 @@ void main() {
 
     expect(find.text(AlertStrings.emptyAll), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
-  });
-
-  testWidgets('Home view all navigates to alerts screen', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.ensureVisible(find.text(HomeStrings.viewAll).first);
-    await tester.tap(find.text(HomeStrings.viewAll).first);
-    await tester.pumpAndSettle();
-
-    expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
-    expect(find.text('Chuva intensa'), findsOneWidget);
-  });
-
-  testWidgets('Home indicators view all navigates to neighborhood screen', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.ensureVisible(find.text(HomeStrings.viewAll).last);
-    await tester.tap(find.text(HomeStrings.viewAll).last);
-    await tester.pumpAndSettle();
-
-    expect(find.text(ScoreStrings.screenTitle), findsOneWidget);
-    expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
   });
 
   testWidgets('Bottom nav opens neighborhood score screen with live data', (

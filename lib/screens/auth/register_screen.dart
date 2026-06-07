@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_typography.dart';
 import '../../core/utils/form_utils.dart';
-import '../../core/utils/phone_input_formatter.dart';
-import '../../core/utils/validators.dart';
 import '../../router/app_router.dart';
 import '../../services/address/viacep_client.dart';
 import '../../services/auth/auth_exceptions.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../widgets/address/address_form_fields.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_scaffold.dart';
+import '../../widgets/forms/form_section_title.dart';
+import '../../widgets/forms/password_text_field.dart';
+import '../../widgets/forms/personal_data_form_fields.dart';
 import '../../widgets/primary_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -33,6 +31,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formController = ValidatedFormController();
   final _addressFormKey = GlobalKey<AddressFormFieldsState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -59,10 +58,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordFocusNode = FocusNode();
 
   late final ViaCepClient _viaCepClient;
-
-  bool _attemptedSubmit = false;
-  bool _isLoading = false;
-  bool _cepResolved = false;
 
   @override
   void initState() {
@@ -97,54 +92,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  bool _isCepResolved() => _addressFormKey.currentState?.cepResolved == true;
+
   Future<void> _submit() async {
-    unfocus(context);
-    setState(() => _attemptedSubmit = true);
+    await _formController.run(
+      context: context,
+      formKey: _formKey,
+      notify: () => setState(() {}),
+      beforeValidate: () {
+        if (!_isCepResolved()) {
+          _addressFormKey.currentState?.showCepRequiredError();
+        }
+      },
+      extraValidation: _isCepResolved,
+      action: () async {
+        try {
+          await widget.authRepository.register(
+            name: _nameController.text,
+            email: _emailController.text,
+            phone: _phoneController.text,
+            password: _passwordController.text,
+            cep: _cepController.text,
+            street: _streetController.text,
+            number: _numberController.text,
+            complement: optionalTrim(_complementController.text),
+            neighborhood: _neighborhoodController.text,
+            city: _cityController.text,
+            state: _stateController.text,
+          );
 
-    final cepResolved =
-        _addressFormKey.currentState?.cepResolved ?? _cepResolved;
+          if (!mounted) return;
 
-    if (!cepResolved) {
-      _addressFormKey.currentState?.showCepRequiredError();
-    }
-
-    if (!_formKey.currentState!.validate() || !cepResolved) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await widget.authRepository.register(
-        name: _nameController.text,
-        email: _emailController.text,
-        phone: _phoneController.text,
-        password: _passwordController.text,
-        cep: _cepController.text,
-        street: _streetController.text,
-        number: _numberController.text,
-        complement: _complementController.text.trim().isEmpty
-            ? null
-            : _complementController.text,
-        neighborhood: _neighborhoodController.text,
-        city: _cityController.text,
-        state: _stateController.text,
-      );
-
-      if (!mounted) return;
-
-      showAppSnackBar(context, AppStrings.registerSuccess);
-      context.go(AppRoutes.login);
-    } on EmailAlreadyRegisteredException {
-      if (!mounted) return;
-      showAppSnackBar(context, AppStrings.emailAlreadyRegistered);
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _focusNext(FocusNode node) {
-    FocusScope.of(context).requestFocus(node);
+          showAppSnackBar(context, AppStrings.registerSuccess);
+          context.go(AppRoutes.login);
+        } on EmailAlreadyRegisteredException {
+          if (!mounted) return;
+          showAppSnackBar(context, AppStrings.emailAlreadyRegistered);
+        }
+      },
+    );
   }
 
   @override
@@ -155,64 +141,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       onBack: () => context.pop(),
       child: Form(
         key: _formKey,
-        autovalidateMode: _attemptedSubmit
-            ? AutovalidateMode.onUserInteraction
-            : AutovalidateMode.disabled,
+        autovalidateMode: _formController.autovalidateMode,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              AppStrings.personalDataSection,
-              style: AppTypography.sectionTitle,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _nameController,
-              focusNode: _nameFocusNode,
-              hintText: AppStrings.fullName,
-              prefixIcon: Icons.person_outline,
-              textInputAction: TextInputAction.next,
-              textCapitalization: TextCapitalization.words,
-              autofillHints: const [AutofillHints.name],
-              onFieldSubmitted: (_) => _focusNext(_emailFocusNode),
-              validator: (value) =>
-                  Validators.required(value, fieldName: AppStrings.fullName),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _emailController,
-              focusNode: _emailFocusNode,
-              hintText: AppStrings.email,
-              prefixIcon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.email],
-              onFieldSubmitted: (_) => _focusNext(_phoneFocusNode),
-              validator: Validators.email,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _phoneController,
-              focusNode: _phoneFocusNode,
-              hintText: AppStrings.phone,
-              prefixIcon: Icons.phone_outlined,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.telephoneNumber],
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(11),
-                PhoneInputFormatter(),
-              ],
-              onFieldSubmitted: (_) => _focusNext(_cepFocusNode),
-              validator: Validators.phone,
+            PersonalDataFormFields(
+              nameController: _nameController,
+              emailController: _emailController,
+              phoneController: _phoneController,
+              nameFocusNode: _nameFocusNode,
+              emailFocusNode: _emailFocusNode,
+              phoneFocusNode: _phoneFocusNode,
+              onNextAfterPhone: _cepFocusNode,
             ),
             const SizedBox(height: AppSpacing.sectionGap),
-            Text(
-              AppStrings.addressSection,
-              style: AppTypography.sectionTitle,
-            ),
-            const SizedBox(height: AppSpacing.md),
+            FormSectionTitle(title: AppStrings.addressSection),
             AddressFormFields(
               key: _addressFormKey,
               cepController: _cepController,
@@ -229,47 +172,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
               neighborhoodFocusNode: _neighborhoodFocusNode,
               viaCepClient: _viaCepClient,
               onNextAfterNeighborhood: _passwordFocusNode,
-              onCepStateChanged: (state) {
-                setState(() => _cepResolved = state.cepResolved);
-              },
             ),
             const SizedBox(height: AppSpacing.sectionGap),
-            Text(
-              AppStrings.securitySection,
-              style: AppTypography.sectionTitle,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
+            FormSectionTitle(title: AppStrings.securitySection),
+            PasswordTextField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
-              hintText: AppStrings.password,
-              prefixIcon: Icons.lock_outline,
-              obscureText: true,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.newPassword],
-              onFieldSubmitted: (_) => _focusNext(_confirmPasswordFocusNode),
-              validator: Validators.password,
+              onFieldSubmitted: (_) =>
+                  focusNext(context, _confirmPasswordFocusNode),
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
+            PasswordTextField(
               controller: _confirmPasswordController,
               focusNode: _confirmPasswordFocusNode,
               hintText: AppStrings.confirmPassword,
-              prefixIcon: Icons.lock_outline,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
+              confirmAgainst: () => _passwordController.text,
               autofillHints: const [AutofillHints.newPassword],
               onFieldSubmitted: (_) => _submit(),
-              validator: (value) => Validators.confirmPassword(
-                value,
-                _passwordController.text,
-              ),
             ),
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: AppStrings.register,
-              onPressed: _isLoading ? null : _submit,
-              isLoading: _isLoading,
+              onPressed: _formController.isLoading ? null : _submit,
+              isLoading: _formController.isLoading,
             ),
             const SizedBox(height: AppSpacing.lg),
           ],

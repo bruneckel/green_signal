@@ -1,38 +1,22 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/form_utils.dart';
-import '../../core/utils/validators.dart';
-import '../../models/map_layer_data.dart';
 import '../../router/app_router.dart';
 import '../../services/auth/auth_exceptions.dart';
 import '../../services/auth/auth_repository.dart';
-import '../../services/environment/environmental_repository.dart';
-import '../../services/environment/unified_location_resolver.dart';
-import '../../services/map/map_grid_sampler.dart';
-import '../../services/map/map_repository.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_footer_link.dart';
 import '../../widgets/auth_scaffold.dart';
+import '../../widgets/forms/email_text_field.dart';
+import '../../widgets/forms/password_text_field.dart';
 import '../../widgets/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    super.key,
-    required this.authRepository,
-    this.mapRepository,
-    this.environmentalRepository,
-    this.locationResolver,
-  });
+  const LoginScreen({super.key, required this.authRepository});
 
   final AuthRepository authRepository;
-  final MapRepository? mapRepository;
-  final EnvironmentalRepository? environmentalRepository;
-  final UnifiedLocationResolver? locationResolver;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -40,13 +24,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formController = ValidatedFormController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
-
-  bool _attemptedSubmit = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -58,68 +40,30 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    unfocus(context);
-    setState(() => _attemptedSubmit = true);
+    await _formController.run(
+      context: context,
+      formKey: _formKey,
+      notify: () => setState(() {}),
+      action: () async {
+        await widget.authRepository.login(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
 
-    if (!_formKey.currentState!.validate()) return;
+        if (!mounted) return;
 
-    setState(() => _isLoading = true);
+        showAppSnackBar(context, AppStrings.loginSuccess);
+        context.go(AppRoutes.home);
+      },
+    );
+  }
 
+  Future<void> _submitWithCredentials() async {
     try {
-      await widget.authRepository.login(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-
-      if (!mounted) return;
-
-      unawaited(_warmUpCaches());
-
-      showAppSnackBar(context, AppStrings.loginSuccess);
-      context.go(AppRoutes.home);
+      await _submit();
     } on InvalidCredentialsException {
       if (!mounted) return;
       showAppSnackBar(context, AppStrings.invalidCredentials);
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _forgotPassword() {
-    context.push(AppRoutes.forgotPassword);
-  }
-
-  Future<void> _warmUpCaches() async {
-    final envRepo = widget.environmentalRepository;
-    final mapRepo = widget.mapRepository;
-    final locationResolver = widget.locationResolver;
-    if (envRepo == null || mapRepo == null || locationResolver == null) {
-      return;
-    }
-
-    try {
-      final location = await locationResolver.resolve(widget.authRepository);
-      unawaited(
-        envRepo.fetchSnapshot(
-          point: location.position,
-          locationLabel: location.label,
-        ),
-      );
-
-      unawaited(
-        mapRepo.fetchLayer(
-          layer: MapLayer.airQuality,
-          bounds: LatLngBounds.fromCenterZoom(
-            location.position,
-            MapLayerData.initialZoom,
-          ),
-          zoom: MapLayerData.initialZoom,
-        ),
-      );
-    } catch (_) {
-      // Warm-up is best-effort.
     }
   }
 
@@ -132,40 +76,25 @@ class _LoginScreenState extends State<LoginScreen> {
       centerContent: true,
       child: Form(
         key: _formKey,
-        autovalidateMode: _attemptedSubmit
-            ? AutovalidateMode.onUserInteraction
-            : AutovalidateMode.disabled,
+        autovalidateMode: _formController.autovalidateMode,
         child: Column(
           children: [
-            AppTextField(
+            EmailTextField(
               controller: _emailController,
               focusNode: _emailFocusNode,
-              hintText: AppStrings.email,
-              prefixIcon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.email],
-              onFieldSubmitted: (_) =>
-                  FocusScope.of(context).requestFocus(_passwordFocusNode),
-              validator: Validators.email,
+              onFieldSubmitted: (_) => focusNext(context, _passwordFocusNode),
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
+            PasswordTextField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
-              hintText: AppStrings.password,
-              prefixIcon: Icons.lock_outline,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              autofillHints: const [AutofillHints.password],
-              onFieldSubmitted: (_) => _submit(),
-              validator: Validators.password,
+              onFieldSubmitted: (_) => _submitWithCredentials(),
             ),
             const SizedBox(height: AppSpacing.xs),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _forgotPassword,
+                onPressed: () => context.push(AppRoutes.forgotPassword),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
@@ -177,8 +106,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
               label: AppStrings.login,
-              onPressed: _isLoading ? null : _submit,
-              isLoading: _isLoading,
+              onPressed: _formController.isLoading ? null : _submitWithCredentials,
+              isLoading: _formController.isLoading,
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthFooterLink(
