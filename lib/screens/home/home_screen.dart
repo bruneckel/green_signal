@@ -12,12 +12,14 @@ import '../../services/alerts/alert_presentation.dart';
 import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
-import '../../services/environment/location_resolver.dart';
+import '../../services/environment/unified_location_resolver.dart';
 import '../../services/environment/snapshot_presentation.dart';
+import '../../services/location/ibge_localities_client.dart';
 import '../../widgets/home/active_alerts_section.dart';
 import '../../widgets/home/home_location_bar.dart';
 import '../../widgets/home/indicators_section.dart';
 import '../../widgets/home/risk_score_card.dart';
+import '../../widgets/location/city_picker_sheet.dart';
 import '../../widgets/shared/header_icon_button.dart';
 import '../../widgets/shared/screen_loading_indicator.dart';
 import '../../widgets/shell/tab_screen_header.dart';
@@ -30,12 +32,14 @@ class HomeScreen extends StatefulWidget {
     required this.environmentalRepository,
     required this.locationResolver,
     required this.alertsRepository,
+    required this.ibgeClient,
   });
 
   final AuthRepository authRepository;
   final EnvironmentalRepository environmentalRepository;
-  final LocationResolver locationResolver;
+  final UnifiedLocationResolver locationResolver;
   final AlertsRepository alertsRepository;
+  final IbgeLocalitiesClient ibgeClient;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -51,16 +55,35 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     widget.authRepository.addListener(_onAuthChanged);
+    widget.locationResolver.addListener(_onLocationChanged);
     _loadSnapshot();
   }
 
   @override
   void dispose() {
     widget.authRepository.removeListener(_onAuthChanged);
+    widget.locationResolver.removeListener(_onLocationChanged);
     super.dispose();
   }
 
-  void _onAuthChanged() => _loadSnapshot();
+  void _onAuthChanged() {
+    widget.locationResolver.loadOverridesForUser(widget.authRepository);
+    _loadSnapshot();
+  }
+
+  void _onLocationChanged() => _loadSnapshot();
+
+  Future<void> _openCityPicker() async {
+    await showCityPickerSheet(
+      context,
+      locationResolver: widget.locationResolver,
+      authRepository: widget.authRepository,
+      ibgeClient: widget.ibgeClient,
+      profileCityLabel: widget.locationResolver.profileLabel(
+        widget.authRepository,
+      ),
+    );
+  }
 
   Future<void> _loadSnapshot() async {
     setState(() => _isLoading = true);
@@ -110,7 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () => context.go(AppRoutes.alerts),
               ),
             ),
-            HomeLocationBar(city: locationLabel),
+            HomeLocationBar(
+              city: locationLabel,
+              isExploring: widget.locationResolver.isExploring,
+              onTap: _openCityPicker,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenHorizontal,

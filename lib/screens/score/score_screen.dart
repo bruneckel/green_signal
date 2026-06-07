@@ -7,7 +7,7 @@ import '../../core/theme/app_typography.dart';
 import '../../models/neighborhood_score_data.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
-import '../../services/environment/location_resolver.dart';
+import '../../services/environment/unified_location_resolver.dart';
 import '../../services/environment/snapshot_presentation.dart';
 import '../../widgets/home/risk_score_card.dart';
 import '../../widgets/score/environmental_indicators_list.dart';
@@ -26,7 +26,7 @@ class ScoreScreen extends StatefulWidget {
 
   final AuthRepository authRepository;
   final EnvironmentalRepository environmentalRepository;
-  final LocationResolver locationResolver;
+  final UnifiedLocationResolver locationResolver;
 
   @override
   State<ScoreScreen> createState() => _ScoreScreenState();
@@ -40,16 +40,23 @@ class _ScoreScreenState extends State<ScoreScreen> {
   void initState() {
     super.initState();
     widget.authRepository.addListener(_onAuthChanged);
+    widget.locationResolver.addListener(_onLocationChanged);
     _loadSnapshot();
   }
 
   @override
   void dispose() {
     widget.authRepository.removeListener(_onAuthChanged);
+    widget.locationResolver.removeListener(_onLocationChanged);
     super.dispose();
   }
 
-  void _onAuthChanged() => _loadSnapshot();
+  void _onAuthChanged() {
+    widget.locationResolver.loadOverridesForUser(widget.authRepository);
+    _loadSnapshot();
+  }
+
+  void _onLocationChanged() => _loadSnapshot();
 
   Future<void> _loadSnapshot() async {
     setState(() => _isLoading = true);

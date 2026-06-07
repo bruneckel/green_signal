@@ -19,6 +19,7 @@ import '../services/auth/auth_repository.dart';
 import '../services/environment/environmental_repository.dart';
 import '../services/environment/geocoding_client.dart';
 import '../services/environment/unified_location_resolver.dart';
+import '../services/location/ibge_localities_client.dart';
 import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
@@ -44,6 +45,7 @@ GoRouter createRouter({
   UnifiedLocationResolver? locationResolver,
   AlertsRepository? alertsRepository,
   ViaCepClient? viaCepClient,
+  IbgeLocalitiesClient? ibgeClient,
   required AuthRepository authRepository,
 }) {
   final mapRepo = mapRepository ?? LiveMapRepository();
@@ -56,6 +58,7 @@ GoRouter createRouter({
       );
   final alertsRepo = alertsRepository ?? LiveAlertsRepository();
   final cepClient = viaCepClient ?? LiveViaCepClient();
+  final localitiesClient = ibgeClient ?? LiveIbgeLocalitiesClient();
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -133,6 +136,7 @@ GoRouter createRouter({
                   environmentalRepository: envRepo,
                   locationResolver: unifiedResolver,
                   alertsRepository: alertsRepo,
+                  ibgeClient: localitiesClient,
                 ),
                 routes: [
                   GoRoute(

@@ -10,7 +10,7 @@ import '../../services/alerts/alert_presentation.dart';
 import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
-import '../../services/environment/location_resolver.dart';
+import '../../services/environment/unified_location_resolver.dart';
 import '../../widgets/alerts/alert_filter_sheet.dart';
 import '../../widgets/alerts/alerts_list_content.dart';
 import '../../widgets/shared/header_icon_button.dart';
@@ -29,7 +29,7 @@ class AlertsScreen extends StatefulWidget {
 
   final AuthRepository authRepository;
   final EnvironmentalRepository environmentalRepository;
-  final LocationResolver locationResolver;
+  final UnifiedLocationResolver locationResolver;
   final AlertsRepository alertsRepository;
 
   @override
@@ -47,16 +47,23 @@ class _AlertsScreenState extends State<AlertsScreen> {
   void initState() {
     super.initState();
     widget.authRepository.addListener(_onAuthChanged);
+    widget.locationResolver.addListener(_onLocationChanged);
     _loadAlerts();
   }
 
   @override
   void dispose() {
     widget.authRepository.removeListener(_onAuthChanged);
+    widget.locationResolver.removeListener(_onLocationChanged);
     super.dispose();
   }
 
-  void _onAuthChanged() => _loadAlerts();
+  void _onAuthChanged() {
+    widget.locationResolver.loadOverridesForUser(widget.authRepository);
+    _loadAlerts();
+  }
+
+  void _onLocationChanged() => _loadAlerts();
 
   Future<void> _loadAlerts() async {
     final generation = ++_loadGeneration;

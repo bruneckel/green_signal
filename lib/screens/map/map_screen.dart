@@ -68,10 +68,18 @@ class _MapScreenState extends State<MapScreen> {
       _repository = _liveRepository!;
     }
     widget.authRepository.addListener(_onAuthChanged);
+    widget.locationResolver.addListener(_onLocationChanged);
     _resolveMapCenter();
   }
 
   void _onAuthChanged() {
+    widget.locationResolver.loadOverridesForUser(widget.authRepository);
+    _lastResolvedCoordsKey = null;
+    _resolveMapCenter();
+  }
+
+  void _onLocationChanged() {
+    _lastResolvedCoordsKey = null;
     _resolveMapCenter();
   }
 
@@ -98,6 +106,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     widget.authRepository.removeListener(_onAuthChanged);
+    widget.locationResolver.removeListener(_onLocationChanged);
     _fetchDebounceTimer?.cancel();
     _liveRepository?.dispose();
     super.dispose();

@@ -9,6 +9,7 @@ import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/profile_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
+import 'package:green_signal/core/constants/location_strings.dart';
 import 'package:green_signal/screens/splash/splash_screen.dart';
 import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/models/alert_item.dart';
@@ -18,8 +19,11 @@ import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
 import 'package:green_signal/services/environment/environmental_repository.dart';
 import 'package:green_signal/services/environment/unified_location_resolver.dart';
+import 'package:green_signal/services/location/ibge_localities_client.dart';
+import 'package:green_signal/services/location/location_override_store.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 FakeMapRepository _fakeMapRepository({
   Duration delay = Duration.zero,
@@ -44,8 +48,6 @@ FakeAlertsRepository _fakeAlertsRepository() {
   return FakeAlertsRepository(alerts: AlertsData.mock);
 }
 
-final _fakeUnifiedLocationResolver = UnifiedLocationResolver();
-
 class _DelayedUnifiedLocationResolver extends UnifiedLocationResolver {
   _DelayedUnifiedLocationResolver({required this.delay});
 
@@ -67,6 +69,7 @@ Widget _buildApp({
   AlertsRepository? alertsRepository,
   UnifiedLocationResolver? locationResolver,
   ViaCepClient? viaCepClient,
+  IbgeLocalitiesClient? ibgeClient,
 }) {
   return GreenSignalApp(
     mapRepository: mapRepository ?? _fakeMapRepository(),
@@ -74,8 +77,9 @@ Widget _buildApp({
     environmentalRepository:
         environmentalRepository ?? _fakeEnvironmentalRepository(),
     alertsRepository: alertsRepository ?? _fakeAlertsRepository(),
-    locationResolver: locationResolver ?? _fakeUnifiedLocationResolver,
+    locationResolver: locationResolver ?? UnifiedLocationResolver(),
     viaCepClient: viaCepClient ?? _fakeViaCepClient,
+    ibgeClient: ibgeClient ?? const FakeIbgeLocalitiesClient(),
   );
 }
 
@@ -130,6 +134,10 @@ Future<void> _loginAndGoHome(
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('Splash navigates to login after delay', (WidgetTester tester) async {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
@@ -586,5 +594,40 @@ void main() {
 
     expect(find.text(CommunityStrings.reportSuccess), findsOneWidget);
     expect(find.text(CommunityStrings.screenTitle), findsAtLeast(1));
+  });
+
+  testWidgets('Home shows exploring label when location override is active', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      LocationOverrideStore.keyForUser('user@example.com'):
+          '{"label":"São Paulo, SP","lat":-23.55,"lng":-46.63,"neighborhood":"São Paulo"}',
+    });
+
+    final auth = FakeAuthRepository();
+    final resolver = UnifiedLocationResolver(
+      overrideStore: LocationOverrideStore(),
+    );
+
+    await _loginAndGoHome(
+      tester,
+      authRepository: auth,
+      locationResolver: resolver,
+    );
+
+    expect(find.textContaining('São Paulo, SP'), findsOneWidget);
+    expect(find.textContaining(LocationStrings.exploringSuffix), findsOneWidget);
+  });
+
+  testWidgets('Tapping home location bar opens city picker sheet', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.byIcon(Icons.location_on_outlined).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text(LocationStrings.pickerTitle), findsOneWidget);
+    expect(find.text(LocationStrings.stateLabel), findsOneWidget);
   });
 }

@@ -9,6 +9,8 @@ import 'services/auth/local_auth_repository.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
 import 'services/environment/unified_location_resolver.dart';
+import 'services/location/ibge_localities_client.dart';
+import 'services/location/location_override_store.dart';
 import 'services/map/inpe_focos_client.dart';
 import 'services/map/map_repository.dart';
 import 'services/map/open_meteo_client.dart';
@@ -37,11 +39,16 @@ Future<void> main() async {
     openMeteoClient: openMeteoClient,
     inpeFocosClient: inpeFocosClient,
   );
+  final overrideStore = LocationOverrideStore();
   final locationResolver = UnifiedLocationResolver(
     coordinatesResolver: coordinatesResolver,
+    overrideStore: overrideStore,
+    geocodingClient: geocodingClient,
   );
+  await locationResolver.loadOverridesForUser(authRepository);
   final alertsRepository = LiveAlertsRepository();
   final viaCepClient = LiveViaCepClient();
+  final ibgeClient = LiveIbgeLocalitiesClient();
 
   runApp(
     GreenSignalApp(
@@ -51,6 +58,7 @@ Future<void> main() async {
       locationResolver: locationResolver,
       alertsRepository: alertsRepository,
       viaCepClient: viaCepClient,
+      ibgeClient: ibgeClient,
     ),
   );
 }

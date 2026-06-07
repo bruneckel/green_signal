@@ -1,7 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/models/map_layer_data.dart';
+import 'package:green_signal/services/location/location_override_store.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:green_signal/models/user_account.dart';
 import 'package:green_signal/services/address/brasil_api_cep_client.dart';
 import 'package:green_signal/services/address/user_coordinates_resolver.dart';
@@ -11,8 +14,15 @@ import 'package:green_signal/services/environment/geocoding_client.dart';
 import 'package:green_signal/services/environment/unified_location_resolver.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   UserCoordinatesResolver _fozCoordinatesResolver({
     GeocodingClient? geocodingClient,
   }) {
@@ -106,6 +116,32 @@ void main() {
       final result = await resolver.resolveWithMeta(FakeAuthRepository());
 
       expect(result.location.position, MapLayerData.saoPauloCenter);
+    });
+
+    test('override takes precedence over profile location', () async {
+      final auth = FakeAuthRepository();
+      await auth.login(email: 'user@example.com', password: '123456');
+
+      final overrideStore = LocationOverrideStore();
+      final resolver = UnifiedLocationResolver(
+        coordinatesResolver: _fozCoordinatesResolver(),
+        overrideStore: overrideStore,
+      );
+
+      await overrideStore.setOverride(
+        const ResolvedLocation(
+          position: LatLng(-23.55, -46.63),
+          label: 'São Paulo, SP',
+          neighborhood: 'São Paulo',
+        ),
+        'user@example.com',
+      );
+
+      final result = await resolver.resolveWithMeta(auth);
+
+      expect(result.location.label, 'São Paulo, SP');
+      expect(result.location.neighborhood, 'São Paulo');
+      resolver.dispose();
     });
 
     test('keeps profile labels when coords resolve fails', () async {
