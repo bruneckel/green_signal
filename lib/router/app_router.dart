@@ -11,8 +11,10 @@ import '../screens/map/map_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/auth/auth_repository.dart';
+import '../services/environment/device_location_service.dart';
 import '../services/environment/environmental_repository.dart';
 import '../services/environment/location_resolver.dart';
+import '../services/environment/map_location_resolver.dart';
 import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
@@ -34,11 +36,17 @@ GoRouter createRouter({
   MapRepository? mapRepository,
   EnvironmentalRepository? environmentalRepository,
   LocationResolver? locationResolver,
+  MapLocationResolver? mapLocationResolver,
   required AuthRepository authRepository,
 }) {
   final mapRepo = mapRepository ?? LiveMapRepository();
   final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
   final resolvedLocation = locationResolver ?? GeocodingLocationResolver();
+  final mapLocResolver = mapLocationResolver ??
+      MapLocationResolver(
+        deviceLocation: const GeolocatorDeviceLocationService(),
+        addressResolver: resolvedLocation,
+      );
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -79,6 +87,7 @@ GoRouter createRouter({
           mapRepository: mapRepo,
           environmentalRepository: envRepo,
           locationResolver: resolvedLocation,
+          mapLocationResolver: mapLocResolver,
         ),
       ),
       GoRoute(
@@ -116,6 +125,8 @@ GoRouter createRouter({
                 name: 'map',
                 builder: (context, state) => MapScreen(
                   repository: mapRepo,
+                  authRepository: authRepository,
+                  mapLocationResolver: mapLocResolver,
                 ),
               ),
             ],

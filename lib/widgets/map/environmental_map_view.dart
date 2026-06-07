@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' hide LatLngBounds;
 import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/map_config.dart';
 import '../../core/theme/app_colors.dart';
@@ -26,6 +27,7 @@ class EnvironmentalMapView extends StatefulWidget {
     required this.gridLngStep,
     required this.isLoading,
     required this.onViewportChanged,
+    required this.initialCenter,
   });
 
   final MapLayer layer;
@@ -36,6 +38,7 @@ class EnvironmentalMapView extends StatefulWidget {
   final double gridLngStep;
   final bool isLoading;
   final ViewportChangedCallback onViewportChanged;
+  final LatLng initialCenter;
 
   @override
   State<EnvironmentalMapView> createState() => _EnvironmentalMapViewState();
@@ -66,6 +69,15 @@ class _EnvironmentalMapViewState extends State<EnvironmentalMapView> {
   @override
   void didUpdateWidget(EnvironmentalMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialCenter != widget.initialCenter) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(
+          widget.initialCenter,
+          MapLayerData.initialZoom,
+        );
+        _reportViewportIfChanged();
+      });
+    }
     if (oldWidget.layer != widget.layer ||
         oldWidget.points != widget.points ||
         oldWidget.displayMode != widget.displayMode ||
@@ -123,7 +135,7 @@ class _EnvironmentalMapViewState extends State<EnvironmentalMapView> {
 
   double _heatmapLatitude() {
     if (widget.points.isEmpty) {
-      return MapLayerData.saoPauloCenter.latitude;
+      return widget.initialCenter.latitude;
     }
     final sum = widget.points.fold<double>(
       0,
@@ -198,7 +210,7 @@ class _EnvironmentalMapViewState extends State<EnvironmentalMapView> {
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: MapLayerData.saoPauloCenter,
+            initialCenter: widget.initialCenter,
             initialZoom: MapLayerData.initialZoom,
             minZoom: MapLayerData.minZoom,
             maxZoom: MapLayerData.maxZoom,

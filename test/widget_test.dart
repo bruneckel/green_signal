@@ -10,8 +10,10 @@ import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
 import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
+import 'package:green_signal/services/environment/device_location_service.dart';
 import 'package:green_signal/services/environment/environmental_repository.dart';
 import 'package:green_signal/services/environment/location_resolver.dart';
+import 'package:green_signal/services/environment/map_location_resolver.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -36,18 +38,32 @@ FakeEnvironmentalRepository _fakeEnvironmentalRepository({
 
 const _fakeLocationResolver = FakeLocationResolver();
 
+const _fakeDeviceLocationService = FakeDeviceLocationService();
+
 Widget _buildApp({
   MapRepository? mapRepository,
   AuthRepository? authRepository,
   EnvironmentalRepository? environmentalRepository,
   LocationResolver? locationResolver,
+  MapLocationResolver? mapLocationResolver,
+  DeviceLocationService? deviceLocationService,
 }) {
+  final addressResolver = locationResolver ?? _fakeLocationResolver;
+  final deviceLocation = deviceLocationService ?? _fakeDeviceLocationService;
+  final mapLocResolver = mapLocationResolver ??
+      MapLocationResolver(
+        deviceLocation: deviceLocation,
+        addressResolver: addressResolver,
+      );
+
   return GreenSignalApp(
     mapRepository: mapRepository ?? _fakeMapRepository(),
     authRepository: authRepository ?? _fakeAuthRepository(),
     environmentalRepository:
         environmentalRepository ?? _fakeEnvironmentalRepository(),
-    locationResolver: locationResolver ?? _fakeLocationResolver,
+    locationResolver: addressResolver,
+    deviceLocationService: deviceLocation,
+    mapLocationResolver: mapLocResolver,
   );
 }
 
@@ -55,11 +71,13 @@ Future<void> _goToLogin(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
+  DeviceLocationService? deviceLocationService,
 }) async {
   await tester.pumpWidget(
     _buildApp(
       mapRepository: mapRepository,
       authRepository: authRepository,
+      deviceLocationService: deviceLocationService,
     ),
   );
   await tester.pump();
@@ -71,11 +89,13 @@ Future<void> _loginAndGoHome(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
+  DeviceLocationService? deviceLocationService,
 }) async {
   await _goToLogin(
     tester,
     mapRepository: mapRepository,
     authRepository: authRepository,
+    deviceLocationService: deviceLocationService,
   );
 
   await tester.enterText(
@@ -241,11 +261,17 @@ void main() {
       mapRepository: _fakeMapRepository(
         delay: const Duration(milliseconds: 500),
       ),
+      deviceLocationService: const FakeDeviceLocationService(
+        delay: Duration(milliseconds: 300),
+      ),
     );
 
     await tester.tap(find.text(HomeStrings.navMap));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 

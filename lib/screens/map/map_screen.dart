@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/map_config.dart';
 import '../../core/constants/map_strings.dart';
@@ -10,6 +11,8 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../models/inpe_hotspot_point.dart';
 import '../../models/map_layer_data.dart';
+import '../../services/auth/auth_repository.dart';
+import '../../services/environment/map_location_resolver.dart';
 import '../../services/map/map_grid_sampler.dart';
 import '../../services/map/map_repository.dart';
 import '../../widgets/map/environmental_map_view.dart';
@@ -17,9 +20,16 @@ import '../../widgets/map/map_filter_chips.dart';
 import '../../widgets/map/map_legend.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key, this.repository});
+  const MapScreen({
+    super.key,
+    this.repository,
+    required this.authRepository,
+    required this.mapLocationResolver,
+  });
 
   final MapRepository? repository;
+  final AuthRepository authRepository;
+  final MapLocationResolver mapLocationResolver;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -37,6 +47,8 @@ class _MapScreenState extends State<MapScreen> {
   bool _isLoading = false;
   bool _hasError = false;
   bool _isEmpty = false;
+  bool _isLocating = true;
+  LatLng? _mapCenter;
   int _fetchGeneration = 0;
   LatLngBounds? _lastBounds;
   double? _lastZoom;
@@ -50,6 +62,26 @@ class _MapScreenState extends State<MapScreen> {
     } else {
       _liveRepository = LiveMapRepository();
       _repository = _liveRepository!;
+    }
+    _resolveMapCenter();
+  }
+
+  Future<void> _resolveMapCenter() async {
+    final result = await widget.mapLocationResolver.resolve(
+      widget.authRepository,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _mapCenter = result.position;
+      _isLocating = false;
+    });
+
+    if (!result.usedGps) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MapStrings.locationDeniedNotice)),
+      );
     }
   }
 
@@ -139,6 +171,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final emptyMessage = _emptyMessage();
+    final mapCenter = _mapCenter;
 
     return ColoredBox(
       color: AppColors.background,
@@ -160,17 +193,20 @@ class _MapScreenState extends State<MapScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             Expanded(
-              child: EnvironmentalMapView(
-                key: ValueKey(_selectedLayer),
-                layer: _selectedLayer,
-                points: _points,
-                displayMode: _displayMode,
-                hotspotMarkers: _hotspotMarkers,
-                gridLatStep: _gridLatStep,
-                gridLngStep: _gridLngStep,
-                isLoading: _isLoading,
-                onViewportChanged: _onViewportChanged,
-              ),
+              child: _isLocating || mapCenter == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : EnvironmentalMapView(
+                      key: ValueKey(_selectedLayer),
+                      layer: _selectedLayer,
+                      points: _points,
+                      displayMode: _displayMode,
+                      hotspotMarkers: _hotspotMarkers,
+                      gridLatStep: _gridLatStep,
+                      gridLngStep: _gridLngStep,
+                      isLoading: _isLoading,
+                      initialCenter: mapCenter,
+                      onViewportChanged: _onViewportChanged,
+                    ),
             ),
             if (_hasError &&
                 _points.isEmpty &&

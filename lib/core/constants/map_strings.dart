@@ -25,5 +25,7 @@ abstract final class MapStrings {
   static const noRainInRegion = 'Sem chuva prevista nesta região.';
   static const noTemperatureInRegion = 'Sem dados de temperatura nesta região.';
   static const noHotspotsInRegion = 'Nenhuma queimada detectada nesta região.';
+  static const locationDeniedNotice =
+      'Localização do dispositivo indisponível. Usando endereço cadastrado.';
   static const attribution = 'Dados: Open-Meteo (CC BY 4.0) · INPE Queimadas';
 }
