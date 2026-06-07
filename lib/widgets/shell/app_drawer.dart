@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/form_utils.dart';
+import '../../router/app_router.dart';
 import '../../services/auth/auth_repository.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -18,7 +19,7 @@ class AppDrawer extends StatelessWidget {
 
   void _onProfileTap(BuildContext context) {
     _closeDrawer(context);
-    showAppSnackBar(context, AppStrings.featureComingSoon);
+    context.push(AppRoutes.profile);
   }
 
   Future<void> _onLogoutTap(BuildContext context) async {

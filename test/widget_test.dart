@@ -7,6 +7,7 @@ import 'package:green_signal/core/constants/app_strings.dart';
 import 'package:green_signal/core/constants/community_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
+import 'package:green_signal/core/constants/profile_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
 import 'package:green_signal/models/environmental_snapshot.dart';
 import 'package:green_signal/models/alert_item.dart';
@@ -253,6 +254,60 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.welcomeTitle), findsOneWidget);
+  });
+
+  testWidgets('Drawer opens profile screen with user data', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AppStrings.profile));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ProfileStrings.screenTitle), findsOneWidget);
+    expect(find.text('Test User'), findsWidgets);
+    expect(find.text('user@example.com'), findsWidgets);
+    expect(find.text('Vila Madalena'), findsOneWidget);
+  });
+
+  testWidgets('Profile save updates user name in drawer', (
+    WidgetTester tester,
+  ) async {
+    final auth = FakeAuthRepository();
+    await _loginAndGoHome(tester, authRepository: auth);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.profile));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byType(TextFormField).first,
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.enterText(find.byType(TextFormField).first, 'Nome Editado');
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text(ProfileStrings.save),
+      500,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.widgetWithText(ElevatedButton, ProfileStrings.save));
+    await tester.pumpAndSettle();
+
+    expect(auth.currentUser?.name, 'Nome Editado');
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nome Editado'), findsOneWidget);
   });
 
   testWidgets('Login navigates to home after valid submit', (

@@ -29,4 +29,16 @@ abstract class AuthRepository extends ChangeNotifier {
   });
 
   Future<void> logout();
+
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
+  });
 }

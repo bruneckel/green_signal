@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/map_layer_data.dart';
@@ -132,6 +131,60 @@ class LocalAuthRepository extends AuthRepository {
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionEmailKey);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
+  }) async {
+    final current = _currentUser;
+    if (current == null) return;
+
+    final draftUser = UserAccount(
+      name: name.trim(),
+      email: current.email,
+      phone: phone.trim(),
+      passwordHash: current.passwordHash,
+      cep: cep.replaceAll(RegExp(r'\D'), ''),
+      street: street.trim(),
+      number: number.trim(),
+      complement: complement?.trim(),
+      neighborhood: neighborhood.trim(),
+      city: city.trim(),
+      state: state.trim(),
+    );
+    final coords = await _coordinatesResolver.resolve(draftUser);
+
+    final updated = UserAccount(
+      name: draftUser.name,
+      email: draftUser.email,
+      phone: draftUser.phone,
+      passwordHash: draftUser.passwordHash,
+      cep: draftUser.cep,
+      street: draftUser.street,
+      number: draftUser.number,
+      complement: draftUser.complement,
+      neighborhood: draftUser.neighborhood,
+      city: draftUser.city,
+      state: draftUser.state,
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
+    );
+
+    _users = _users
+        .map((entry) => entry.email == updated.email ? updated : entry)
+        .toList();
+    _currentUser = updated;
+    await _saveUsers();
     notifyListeners();
   }
 

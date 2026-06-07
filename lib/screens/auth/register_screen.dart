@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
@@ -10,6 +9,7 @@ import '../../router/app_router.dart';
 import '../../services/address/viacep_client.dart';
 import '../../services/auth/auth_exceptions.dart';
 import '../../services/auth/auth_repository.dart';
+import '../../widgets/address/address_form_fields.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/primary_button.dart';
@@ -30,6 +30,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _addressFormKey = GlobalKey<AddressFormFieldsState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _cepController = TextEditingController();
@@ -58,20 +59,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _attemptedSubmit = false;
   bool _isLoading = false;
-  bool _isFetchingCep = false;
   bool _cepResolved = false;
-  String? _cepError;
 
   @override
   void initState() {
     super.initState();
     _viaCepClient = widget.viaCepClient ?? LiveViaCepClient();
-    _cepController.addListener(_onCepChanged);
   }
 
   @override
   void dispose() {
-    _cepController.removeListener(_onCepChanged);
     _nameController.dispose();
     _emailController.dispose();
     _cepController.dispose();
@@ -97,64 +94,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _onCepChanged() {
-    final digits = _cepController.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 8) {
-      _fetchCep(digits);
-    } else if (_cepResolved) {
-      setState(() {
-        _cepResolved = false;
-        _cepError = null;
-        _streetController.clear();
-        _neighborhoodController.clear();
-        _cityController.clear();
-        _stateController.clear();
-      });
-    }
-  }
-
-  Future<void> _fetchCep(String digits) async {
-    setState(() {
-      _isFetchingCep = true;
-      _cepError = null;
-    });
-
-    final result = await _viaCepClient.fetch(digits);
-
-    if (!mounted) return;
-
-    if (result == null) {
-      setState(() {
-        _isFetchingCep = false;
-        _cepResolved = false;
-        _cepError = AppStrings.cepNotFound;
-      });
-      return;
-    }
-
-    setState(() {
-      _isFetchingCep = false;
-      _cepResolved = true;
-      _streetController.text = result.street;
-      _neighborhoodController.text = result.neighborhood;
-      _cityController.text = result.city;
-      _stateController.text = result.state;
-      if (result.complement.isNotEmpty &&
-          _complementController.text.trim().isEmpty) {
-        _complementController.text = result.complement;
-      }
-    });
-  }
-
   Future<void> _submit() async {
     unfocus(context);
     setState(() => _attemptedSubmit = true);
 
-    if (!_cepResolved) {
-      setState(() => _cepError = AppStrings.cepNotFound);
+    final cepResolved =
+        _addressFormKey.currentState?.cepResolved ?? _cepResolved;
+
+    if (!cepResolved) {
+      _addressFormKey.currentState?.showCepRequiredError();
     }
 
-    if (!_formKey.currentState!.validate() || !_cepResolved) return;
+    if (!_formKey.currentState!.validate() || !cepResolved) return;
 
     setState(() => _isLoading = true);
 
@@ -231,116 +182,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               validator: Validators.email,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _cepController,
-              focusNode: _cepFocusNode,
-              hintText: AppStrings.cep,
-              prefixIcon: Icons.pin_drop_outlined,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(8),
-                _CepInputFormatter(),
-              ],
-              onFieldSubmitted: (_) => _focusNext(_streetFocusNode),
-              validator: Validators.cep,
-              suffixIcon: _isFetchingCep
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : null,
-            ),
-            if (_cepError != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _cepError!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _streetController,
-              focusNode: _streetFocusNode,
-              hintText: AppStrings.street,
-              prefixIcon: Icons.signpost_outlined,
-              textInputAction: TextInputAction.next,
-              enabled: _cepResolved,
-              onFieldSubmitted: (_) => _focusNext(_numberFocusNode),
-              validator: (value) =>
-                  Validators.required(value, fieldName: AppStrings.street),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _numberController,
-              focusNode: _numberFocusNode,
-              hintText: AppStrings.number,
-              prefixIcon: Icons.tag,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              enabled: _cepResolved,
-              onFieldSubmitted: (_) => _focusNext(_complementFocusNode),
-              validator: (value) =>
-                  Validators.required(value, fieldName: AppStrings.number),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _complementController,
-              focusNode: _complementFocusNode,
-              hintText: AppStrings.complement,
-              prefixIcon: Icons.apartment_outlined,
-              textInputAction: TextInputAction.next,
-              enabled: _cepResolved,
-              onFieldSubmitted: (_) => _focusNext(_neighborhoodFocusNode),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: _neighborhoodController,
-              focusNode: _neighborhoodFocusNode,
-              hintText: AppStrings.neighborhood,
-              prefixIcon: Icons.location_city_outlined,
-              textInputAction: TextInputAction.next,
-              enabled: _cepResolved,
-              onFieldSubmitted: (_) => _focusNext(_phoneFocusNode),
-              validator: (value) => Validators.required(
-                value,
-                fieldName: AppStrings.neighborhood,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: AppTextField(
-                    controller: _cityController,
-                    hintText: AppStrings.city,
-                    prefixIcon: Icons.map_outlined,
-                    readOnly: true,
-                    enabled: _cepResolved,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
-                    controller: _stateController,
-                    hintText: AppStrings.state,
-                    readOnly: true,
-                    enabled: _cepResolved,
-                  ),
-                ),
-              ],
+            AddressFormFields(
+              key: _addressFormKey,
+              cepController: _cepController,
+              streetController: _streetController,
+              numberController: _numberController,
+              complementController: _complementController,
+              neighborhoodController: _neighborhoodController,
+              cityController: _cityController,
+              stateController: _stateController,
+              cepFocusNode: _cepFocusNode,
+              streetFocusNode: _streetFocusNode,
+              numberFocusNode: _numberFocusNode,
+              complementFocusNode: _complementFocusNode,
+              neighborhoodFocusNode: _neighborhoodFocusNode,
+              viaCepClient: _viaCepClient,
+              onNextAfterNeighborhood: _phoneFocusNode,
+              onCepStateChanged: (state) {
+                setState(() => _cepResolved = state.cepResolved);
+              },
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
@@ -392,27 +252,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CepInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length <= 5) {
-      return TextEditingValue(
-        text: digits,
-        selection: TextSelection.collapsed(offset: digits.length),
-      );
-    }
-    final formatted = '${digits.substring(0, 5)}-${digits.substring(5)}';
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

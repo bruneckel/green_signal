@@ -103,6 +103,44 @@ class FakeAuthRepository extends AuthRepository {
     notifyListeners();
   }
 
+  @override
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+    required String cep,
+    required String street,
+    required String number,
+    String? complement,
+    required String neighborhood,
+    required String city,
+    required String state,
+  }) async {
+    final current = _currentUser;
+    if (current == null) return;
+
+    final updated = UserAccount(
+      name: name.trim(),
+      email: current.email,
+      phone: phone.trim(),
+      passwordHash: current.passwordHash,
+      cep: cep.replaceAll(RegExp(r'\D'), ''),
+      street: street.trim(),
+      number: number.trim(),
+      complement: complement?.trim(),
+      neighborhood: neighborhood.trim(),
+      city: city.trim(),
+      state: state.trim(),
+      latitude: current.latitude,
+      longitude: current.longitude,
+    );
+
+    _users = _users
+        .map((entry) => entry.email == updated.email ? updated : entry)
+        .toList();
+    _currentUser = updated;
+    notifyListeners();
+  }
+
   UserAccount? _findUserByEmail(String email) {
     final normalized = email.toLowerCase();
     for (final user in _users) {

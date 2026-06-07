@@ -124,6 +124,57 @@ void main() {
       expect(auth.currentUser?.longitude, closeTo(-54.5882, 0.001));
     });
 
+    test('updateProfile persists name and recalculates coordinates', () async {
+      final fozUser = UserAccount(
+        name: 'Foz User',
+        email: 'foz@test.com',
+        phone: '45999999999',
+        passwordHash: hashPassword('123456'),
+        cep: '85862350',
+        street: 'Avenida Brasil',
+        number: '100',
+        neighborhood: 'Centro',
+        city: 'Foz do Iguaçu',
+        state: 'PR',
+        latitude: -23.546,
+        longitude: -46.691,
+      );
+
+      SharedPreferences.setMockInitialValues({
+        'auth_users': jsonEncode([fozUser.toJson()]),
+        'auth_session_email': 'foz@test.com',
+      });
+
+      final auth = LocalAuthRepository(
+        coordinatesResolver: _fozCoordinatesResolver(),
+      );
+      await auth.initialize();
+
+      await auth.updateProfile(
+        name: 'Nome Atualizado',
+        phone: '45988887777',
+        cep: '85862350',
+        street: 'Avenida Brasil',
+        number: '200',
+        neighborhood: 'Centro',
+        city: 'Foz do Iguaçu',
+        state: 'PR',
+      );
+
+      expect(auth.currentUser?.name, 'Nome Atualizado');
+      expect(auth.currentUser?.phone, '45988887777');
+      expect(auth.currentUser?.number, '200');
+      expect(auth.currentUser?.latitude, closeTo(-25.5478, 0.001));
+      expect(auth.currentUser?.longitude, closeTo(-54.5882, 0.001));
+      expect(auth.currentUser?.legacyAddress, isNull);
+
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString('auth_users')!;
+      final users = jsonDecode(usersJson) as List<dynamic>;
+      final saved = users.first as Map<String, dynamic>;
+      expect(saved['name'], 'Nome Atualizado');
+    });
+
     test('login migrates user with exact São Paulo fallback coordinates', () async {
       final fozUser = UserAccount(
         name: 'Foz User',

@@ -8,6 +8,7 @@ import '../screens/community/community_screen.dart';
 import '../screens/community/new_report_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/address/user_coordinates_resolver.dart';
@@ -30,6 +31,7 @@ abstract final class AppRoutes {
   static const score = '/score';
   static const community = '/community';
   static const communityNewReport = '/community/new-report';
+  static const profile = '/home/profile';
 }
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -121,6 +123,17 @@ GoRouter createRouter({
                   locationResolver: unifiedResolver,
                   alertsRepository: alertsRepo,
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'profile',
+                    name: 'profile',
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) => ProfileScreen(
+                      authRepository: authRepository,
+                      viaCepClient: cepClient,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
