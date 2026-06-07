@@ -6,7 +6,7 @@ import '../../services/alerts/alert_presentation.dart';
 import '../../widgets/alerts/alert_card.dart';
 import '../../widgets/alerts/alerts_empty_state.dart';
 import '../../widgets/alerts/alerts_grouped_list.dart';
-import '../../widgets/shared/screen_loading_indicator.dart';
+import '../../widgets/shared/content_skeletons.dart';
 
 class AlertsListContent extends StatelessWidget {
   const AlertsListContent({
@@ -26,13 +26,7 @@ class AlertsListContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading && alerts.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 120),
-          ScreenLoadingIndicator(),
-        ],
-      );
+      return const AlertsListSkeleton();
     }
 
     if (_filteredAlerts.isEmpty) {

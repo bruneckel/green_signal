@@ -21,7 +21,7 @@ import '../../widgets/home/indicators_section.dart';
 import '../../widgets/home/risk_score_card.dart';
 import '../../widgets/location/city_picker_sheet.dart';
 import '../../widgets/shared/header_icon_button.dart';
-import '../../widgets/shared/screen_loading_indicator.dart';
+import '../../widgets/shared/content_skeletons.dart';
 import '../../widgets/shell/tab_screen_header.dart';
 import '../../widgets/shell/tab_screen_scaffold.dart';
 
@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const SizedBox(height: AppSpacing.sectionGap),
                   if (_isLoading || snapshot == null)
-                    const ScreenLoadingIndicator()
+                    const HomeScreenSkeleton()
                   else ...[
                     RiskScoreCard(
                       riskScore: snapshot.riskScore,

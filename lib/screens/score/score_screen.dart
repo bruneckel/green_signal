@@ -12,7 +12,7 @@ import '../../services/environment/snapshot_presentation.dart';
 import '../../widgets/home/risk_score_card.dart';
 import '../../widgets/score/environmental_indicators_list.dart';
 import '../../widgets/score/score_neighborhood_header.dart';
-import '../../widgets/shared/screen_loading_indicator.dart';
+import '../../widgets/shared/content_skeletons.dart';
 import '../../widgets/shell/tab_screen_header.dart';
 import '../../widgets/shell/tab_screen_scaffold.dart';
 
@@ -110,7 +110,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   if (_isLoading || _data == null)
-                    const ScreenLoadingIndicator()
+                    const ScoreScreenSkeleton()
                   else ...[
                     RiskScoreCard(
                       riskScore: _data!.riskScore,

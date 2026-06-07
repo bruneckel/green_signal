@@ -18,6 +18,7 @@ import '../../services/map/map_repository.dart';
 import '../../widgets/map/environmental_map_view.dart';
 import '../../widgets/map/map_filter_chips.dart';
 import '../../widgets/map/map_screen_footer.dart';
+import '../../widgets/shared/content_skeletons.dart';
 import '../../widgets/shell/tab_screen_header.dart';
 import '../../widgets/shell/tab_screen_scaffold.dart';
 
@@ -197,7 +198,7 @@ class _MapScreenState extends State<MapScreen> {
           const SizedBox(height: AppSpacing.md),
           Expanded(
             child: _isLocating || mapCenter == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const MapAreaSkeleton()
                 : EnvironmentalMapView(
                     key: ValueKey(
                       '${_selectedLayer.name}_'

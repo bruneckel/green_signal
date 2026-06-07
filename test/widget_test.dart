@@ -21,6 +21,8 @@ import 'package:green_signal/services/environment/environmental_repository.dart'
 import 'package:green_signal/services/environment/unified_location_resolver.dart';
 import 'package:green_signal/services/location/ibge_localities_client.dart';
 import 'package:green_signal/services/location/location_override_store.dart';
+import 'package:green_signal/widgets/map/environmental_map_view.dart';
+import 'package:green_signal/widgets/shared/skeleton.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -383,7 +385,7 @@ void main() {
     expect(find.text(MapStrings.attribution), findsOneWidget);
   });
 
-  testWidgets('Map shows loading indicator while fetching data', (
+  testWidgets('Map shows skeleton while locating then spinner while fetching', (
     WidgetTester tester,
   ) async {
     await _loginAndGoHome(
@@ -399,11 +401,13 @@ void main() {
     await tester.tap(find.text(HomeStrings.navMap));
     await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(SkeletonPulse), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    expect(find.byType(EnvironmentalMapView), findsOneWidget);
 
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
