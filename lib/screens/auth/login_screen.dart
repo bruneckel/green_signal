@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -5,18 +7,32 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/form_utils.dart';
 import '../../core/utils/validators.dart';
+import '../../models/map_layer_data.dart';
 import '../../router/app_router.dart';
 import '../../services/auth/auth_exceptions.dart';
 import '../../services/auth/auth_repository.dart';
+import '../../services/environment/environmental_repository.dart';
+import '../../services/environment/location_resolver.dart';
+import '../../services/map/map_grid_sampler.dart';
+import '../../services/map/map_repository.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_footer_link.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.authRepository});
+  const LoginScreen({
+    super.key,
+    required this.authRepository,
+    this.mapRepository,
+    this.environmentalRepository,
+    this.locationResolver,
+  });
 
   final AuthRepository authRepository;
+  final MapRepository? mapRepository;
+  final EnvironmentalRepository? environmentalRepository;
+  final LocationResolver? locationResolver;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -57,6 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      unawaited(_warmUpCaches());
+
       showAppSnackBar(context, AppStrings.loginSuccess);
       context.go(AppRoutes.home);
     } on InvalidCredentialsException {
@@ -71,6 +89,37 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _forgotPassword() {
     showAppSnackBar(context, AppStrings.featureComingSoon);
+  }
+
+  Future<void> _warmUpCaches() async {
+    final envRepo = widget.environmentalRepository;
+    final mapRepo = widget.mapRepository;
+    final locationResolver = widget.locationResolver;
+    if (envRepo == null || mapRepo == null || locationResolver == null) {
+      return;
+    }
+
+    try {
+      final location = await locationResolver.resolve(widget.authRepository);
+      unawaited(
+        envRepo.fetchSnapshot(
+          point: location.position,
+          locationLabel: location.label,
+        ),
+      );
+      unawaited(
+        mapRepo.fetchLayer(
+          layer: MapLayer.airQuality,
+          bounds: LatLngBounds.fromCenterZoom(
+            location.position,
+            MapLayerData.initialZoom,
+          ),
+          zoom: MapLayerData.initialZoom,
+        ),
+      );
+    } catch (_) {
+      // Warm-up is best-effort.
+    }
   }
 
   @override

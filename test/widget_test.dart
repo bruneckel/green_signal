@@ -10,6 +10,8 @@ import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
 import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
+import 'package:green_signal/services/environment/environmental_repository.dart';
+import 'package:green_signal/services/environment/location_resolver.dart';
 import 'package:green_signal/services/map/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -26,13 +28,26 @@ FakeAuthRepository _fakeAuthRepository({bool startLoggedIn = false}) {
   return FakeAuthRepository(startLoggedIn: startLoggedIn);
 }
 
+FakeEnvironmentalRepository _fakeEnvironmentalRepository({
+  Duration delay = Duration.zero,
+}) {
+  return FakeEnvironmentalRepository(delay: delay);
+}
+
+const _fakeLocationResolver = FakeLocationResolver();
+
 Widget _buildApp({
   MapRepository? mapRepository,
   AuthRepository? authRepository,
+  EnvironmentalRepository? environmentalRepository,
+  LocationResolver? locationResolver,
 }) {
   return GreenSignalApp(
     mapRepository: mapRepository ?? _fakeMapRepository(),
     authRepository: authRepository ?? _fakeAuthRepository(),
+    environmentalRepository:
+        environmentalRepository ?? _fakeEnvironmentalRepository(),
+    locationResolver: locationResolver ?? _fakeLocationResolver,
   );
 }
 
@@ -308,8 +323,8 @@ void main() {
 
     expect(find.text(ScoreStrings.screenTitle), findsOneWidget);
     expect(find.textContaining('Vila Madalena'), findsOneWidget);
-    expect(find.text('65'), findsOneWidget);
-    expect(find.text('Moderada AQI 68'), findsOneWidget);
+    expect(find.text('83'), findsOneWidget);
+    expect(find.text('Ruim AQI 68'), findsOneWidget);
     expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
   });
 

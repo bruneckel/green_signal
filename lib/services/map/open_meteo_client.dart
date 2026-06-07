@@ -133,14 +133,16 @@ class OpenMeteoClient {
     for (var i = 0; i < grid.length; i += MapConfig.requestBatchSize) {
       final end = (i + MapConfig.requestBatchSize).clamp(0, grid.length);
       final batch = grid.sublist(i, end);
-      for (final point in batch) {
-        try {
-          final reading = await fetch(point);
-          results.add(reading);
-        } catch (_) {
-          // Skip failed points; other cells still contribute to the layer.
-        }
-      }
+      final batchResults = await Future.wait(
+        batch.map((point) async {
+          try {
+            return await fetch(point);
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+      results.addAll(batchResults.whereType<OpenMeteoReading>());
     }
     return results;
   }

@@ -11,6 +11,8 @@ import '../screens/map/map_screen.dart';
 import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/auth/auth_repository.dart';
+import '../services/environment/environmental_repository.dart';
+import '../services/environment/location_resolver.dart';
 import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
@@ -30,18 +32,24 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createRouter({
   MapRepository? mapRepository,
+  EnvironmentalRepository? environmentalRepository,
+  LocationResolver? locationResolver,
   required AuthRepository authRepository,
 }) {
+  final mapRepo = mapRepository ?? LiveMapRepository();
+  final envRepo = environmentalRepository ?? LiveEnvironmentalRepository();
+  final resolvedLocation = locationResolver ?? GeocodingLocationResolver();
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
     refreshListenable: authRepository,
     redirect: (context, state) {
-      final location = state.matchedLocation;
-      final isSplash = location == AppRoutes.splash;
-      final isLogin = location == AppRoutes.login;
-      final isRegister = location == AppRoutes.register;
+      final matchedLocation = state.matchedLocation;
+      final isSplash = matchedLocation == AppRoutes.splash;
+      final isLogin = matchedLocation == AppRoutes.login;
+      final isRegister = matchedLocation == AppRoutes.register;
 
       if (isSplash) return null;
 
@@ -68,6 +76,9 @@ GoRouter createRouter({
         name: 'login',
         builder: (context, state) => LoginScreen(
           authRepository: authRepository,
+          mapRepository: mapRepo,
+          environmentalRepository: envRepo,
+          locationResolver: resolvedLocation,
         ),
       ),
       GoRoute(
@@ -90,7 +101,11 @@ GoRouter createRouter({
               GoRoute(
                 path: AppRoutes.home,
                 name: 'home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => HomeScreen(
+                  authRepository: authRepository,
+                  environmentalRepository: envRepo,
+                  locationResolver: resolvedLocation,
+                ),
               ),
             ],
           ),
@@ -100,7 +115,7 @@ GoRouter createRouter({
                 path: AppRoutes.map,
                 name: 'map',
                 builder: (context, state) => MapScreen(
-                  repository: mapRepository,
+                  repository: mapRepo,
                 ),
               ),
             ],
@@ -119,7 +134,11 @@ GoRouter createRouter({
               GoRoute(
                 path: AppRoutes.score,
                 name: 'score',
-                builder: (context, state) => const ScoreScreen(),
+                builder: (context, state) => ScoreScreen(
+                  authRepository: authRepository,
+                  environmentalRepository: envRepo,
+                  locationResolver: resolvedLocation,
+                ),
               ),
             ],
           ),

@@ -17,4 +17,8 @@ abstract final class MapConfig {
   static const minGridSuccessRatio = 0.5;
   static const tempScaleMinC = 15.0;
   static const tempScaleMaxC = 35.0;
+
+  static const geocodingUrl = 'https://geocoding-api.open-meteo.com/v1/search';
+  static const geocodeCacheTtlDays = 7;
+  static const snapshotHotspotRadiusKm = 30.0;
 }
