@@ -11,4 +11,12 @@ abstract final class AppSpacing {
   static const double buttonHeight = 52;
   static const double borderRadius = 12;
   static const double logoSize = 130;
+
+  static const double cardPadding = 20;
+  static const double sectionGap = 20;
+  static const double navBarHeight = 68;
+  static const double navIconSize = 22;
+  static const double navLabelSize = 10;
+  static const double indicatorCardWidth = 118;
+  static const double indicatorListHeight = 112;
 }

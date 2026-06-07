@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     unfocus(context);
     if (!_formKey.currentState!.validate()) return;
 
-    showAppSnackBar(context, AppStrings.loginSuccess);
+    context.go(AppRoutes.home);
   }
 
   void _forgotPassword() {
