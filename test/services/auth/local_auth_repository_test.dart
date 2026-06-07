@@ -204,5 +204,14 @@ void main() {
 
       expect(auth.currentUser?.latitude, closeTo(-25.5478, 0.001));
     });
+
+    test('requestPasswordReset completes without error for unknown email',
+        () async {
+      final auth = LocalAuthRepository();
+      await expectLater(
+        auth.requestPasswordReset(email: 'unknown@example.com'),
+        completes,
+      );
+    });
   });
 }

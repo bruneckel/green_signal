@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/alerts/alerts_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/community/community_screen.dart';
@@ -25,6 +26,7 @@ abstract final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
   static const register = '/register';
+  static const forgotPassword = '/forgot-password';
   static const home = '/home';
   static const map = '/map';
   static const alerts = '/alerts';
@@ -65,14 +67,19 @@ GoRouter createRouter({
       final isSplash = matchedLocation == AppRoutes.splash;
       final isLogin = matchedLocation == AppRoutes.login;
       final isRegister = matchedLocation == AppRoutes.register;
+      final isForgotPassword = matchedLocation == AppRoutes.forgotPassword;
 
       if (isSplash) return null;
 
-      if (!authRepository.isLoggedIn && !isLogin && !isRegister) {
+      if (!authRepository.isLoggedIn &&
+          !isLogin &&
+          !isRegister &&
+          !isForgotPassword) {
         return AppRoutes.login;
       }
 
-      if (authRepository.isLoggedIn && (isLogin || isRegister)) {
+      if (authRepository.isLoggedIn &&
+          (isLogin || isRegister || isForgotPassword)) {
         return AppRoutes.home;
       }
 
@@ -102,6 +109,13 @@ GoRouter createRouter({
         builder: (context, state) => RegisterScreen(
           authRepository: authRepository,
           viaCepClient: cepClient,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        name: 'forgot-password',
+        builder: (context, state) => ForgotPasswordScreen(
+          authRepository: authRepository,
         ),
       ),
       StatefulShellRoute.indexedStack(

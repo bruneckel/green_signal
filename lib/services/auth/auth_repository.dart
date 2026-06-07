@@ -28,6 +28,8 @@ abstract class AuthRepository extends ChangeNotifier {
     required String password,
   });
 
+  Future<void> requestPasswordReset({required String email});
+
   Future<void> logout();
 
   Future<void> updateProfile({

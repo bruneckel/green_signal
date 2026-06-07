@@ -156,6 +156,40 @@ void main() {
     expect(find.text(AppStrings.registerTitle), findsOneWidget);
   });
 
+  testWidgets('Login navigates to forgot password screen', (
+    WidgetTester tester,
+  ) async {
+    await _goToLogin(tester);
+
+    await tester.tap(find.text(AppStrings.forgotPassword));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.forgotPasswordTitle), findsOneWidget);
+    expect(find.text(AppStrings.sendResetLink), findsOneWidget);
+  });
+
+  testWidgets('Forgot password shows success after submit', (
+    WidgetTester tester,
+  ) async {
+    await _goToLogin(tester);
+
+    await tester.tap(find.text(AppStrings.forgotPassword));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'unknown@example.com',
+    );
+    await tester.tap(find.text(AppStrings.sendResetLink));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.forgotPasswordSuccessTitle), findsOneWidget);
+    expect(find.text(AppStrings.forgotPasswordSuccessMessage), findsOneWidget);
+    expect(find.text(AppStrings.backToLogin), findsOneWidget);
+  });
+
   testWidgets('Login shows validation errors only after submit', (
     WidgetTester tester,
   ) async {

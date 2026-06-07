@@ -31,6 +31,15 @@ abstract final class AppStrings {
   static const securitySection = 'Senha de acesso';
 
   static const forgotPassword = 'Esqueci minha senha';
+  static const forgotPasswordTitle = 'Esqueci minha senha';
+  static const forgotPasswordSubtitle =
+      'Informe seu e-mail e enviaremos um link para redefinir sua senha.';
+  static const sendResetLink = 'Enviar link';
+  static const forgotPasswordSuccessTitle = 'Verifique seu e-mail';
+  static const forgotPasswordSuccessMessage =
+      'Se existir uma conta com esse e-mail, enviamos um link para redefinir sua senha.';
+  static const backToLogin = 'Voltar ao login';
+  static const resendResetLink = 'Reenviar link';
   static const login = 'Entrar';
   static const register = 'Cadastrar';
   static const noAccount = 'Não tem conta? ';

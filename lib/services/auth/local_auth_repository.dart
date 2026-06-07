@@ -128,6 +128,12 @@ class LocalAuthRepository extends AuthRepository {
   }
 
   @override
+  Future<void> requestPasswordReset({required String email}) async {
+    email.trim().toLowerCase();
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+  }
+
+  @override
   Future<void> logout() async {
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();

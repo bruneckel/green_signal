@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _forgotPassword() {
-    showAppSnackBar(context, AppStrings.featureComingSoon);
+    context.push(AppRoutes.forgotPassword);
   }
 
   Future<void> _warmUpCaches() async {
@@ -162,13 +162,19 @@ class _LoginScreenState extends State<LoginScreen> {
               validator: Validators.password,
             ),
             const SizedBox(height: AppSpacing.xs),
-            Center(
+            Align(
+              alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _forgotPassword,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: const Text(AppStrings.forgotPassword),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
               label: AppStrings.login,
               onPressed: _isLoading ? null : _submit,

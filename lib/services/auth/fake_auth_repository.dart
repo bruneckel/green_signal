@@ -99,6 +99,12 @@ class FakeAuthRepository extends AuthRepository {
   }
 
   @override
+  Future<void> requestPasswordReset({required String email}) async {
+    email.trim().toLowerCase();
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+  }
+
+  @override
   Future<void> logout() async {
     _currentUser = null;
     notifyListeners();
