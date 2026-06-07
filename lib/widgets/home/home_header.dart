@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../router/app_router.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/form_utils.dart';
@@ -36,8 +38,7 @@ class HomeHeader extends StatelessWidget {
               ),
               _HeaderIconButton(
                 icon: Icons.notifications_outlined,
-                onPressed: () =>
-                    showAppSnackBar(context, AppStrings.featureComingSoon),
+                onPressed: () => context.go(AppRoutes.alerts),
               ),
             ],
           ),

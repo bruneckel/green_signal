@@ -1,5 +1,5 @@
 abstract final class HomeStrings {
-  static const environmentalRiskScore = 'Environmental Risk Score';
+  static const environmentalRiskScore = 'Índice de Risco Ambiental';
   static const activeAlerts = 'Alertas Ativos';
   static const indicators = 'Indicadores';
   static const viewAll = 'Ver todos >';
@@ -15,7 +15,7 @@ abstract final class HomeStrings {
   static const navHome = 'Início';
   static const navMap = 'Mapa';
   static const navAlerts = 'Alertas';
-  static const navScore = 'Score';
+  static const navScore = 'Bairro';
   static const navCommunity = 'Comunidade';
 
   static const comingSoon = 'Em breve';

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/home_strings.dart';
+import '../../router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -20,6 +22,7 @@ class IndicatorsSection extends StatelessWidget {
         SectionHeader(
           title: HomeStrings.indicators,
           showViewAll: true,
+          onViewAllTap: () => context.go(AppRoutes.score),
         ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(

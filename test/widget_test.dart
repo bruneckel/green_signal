@@ -305,6 +305,18 @@ void main() {
     expect(find.textContaining('35°C'), findsOneWidget);
   });
 
+  testWidgets('Home bell icon navigates to alerts screen', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.tap(find.byIcon(Icons.notifications_outlined).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
+    expect(find.text('Chuva intensa'), findsOneWidget);
+  });
+
   testWidgets('Bottom nav opens alerts screen with mock data', (
     WidgetTester tester,
   ) async {
@@ -347,7 +359,20 @@ void main() {
     expect(find.text('Chuva intensa'), findsOneWidget);
   });
 
-  testWidgets('Bottom nav opens score screen with mock data', (
+  testWidgets('Home indicators view all navigates to neighborhood screen', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(tester);
+
+    await tester.ensureVisible(find.text(HomeStrings.viewAll).last);
+    await tester.tap(find.text(HomeStrings.viewAll).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text(ScoreStrings.screenTitle), findsOneWidget);
+    expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
+  });
+
+  testWidgets('Bottom nav opens neighborhood score screen with live data', (
     WidgetTester tester,
   ) async {
     await _loginAndGoHome(tester);
@@ -356,24 +381,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(ScoreStrings.screenTitle), findsOneWidget);
+    expect(find.text(HomeStrings.environmentalRiskScore), findsOneWidget);
     expect(find.textContaining('Vila Madalena'), findsOneWidget);
     expect(find.text('83'), findsOneWidget);
     expect(find.text('Ruim AQI 68'), findsOneWidget);
     expect(find.text(ScoreStrings.indicatorsTitle), findsOneWidget);
-  });
-
-  testWidgets('Score screen filter shows coming soon snackbar', (
-    WidgetTester tester,
-  ) async {
-    await _loginAndGoHome(tester);
-
-    await tester.tap(find.text(HomeStrings.navScore));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byIcon(Icons.filter_list));
-    await tester.pumpAndSettle();
-
-    expect(find.text(AppStrings.featureComingSoon), findsOneWidget);
   });
 
   testWidgets('Bottom nav opens community screen with mock data', (
