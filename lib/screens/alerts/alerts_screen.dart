@@ -5,12 +5,16 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../models/alert_item.dart';
+import '../../services/alerts/alert_presentation.dart';
 import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
 import '../../services/environment/location_resolver.dart';
 import '../../widgets/alerts/alert_card.dart';
-import '../../widgets/alerts/alert_filter_chips.dart';
+import '../../widgets/alerts/alert_filter_sheet.dart';
+import '../../widgets/alerts/alerts_empty_state.dart';
+import '../../widgets/alerts/alerts_grouped_list.dart';
+import '../../widgets/alerts/alerts_screen_header.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({
@@ -31,7 +35,7 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  AlertTab _selectedTab = AlertTab.active;
+  AlertTab _selectedTab = AlertTab.all;
   bool _isLoading = true;
   bool _inmetHasError = false;
   List<AlertItem> _alerts = const [];
@@ -87,12 +91,63 @@ class _AlertsScreenState extends State<AlertsScreen> {
     }
   }
 
+  Future<void> _openFilterSheet() async {
+    final selected = await showAlertFilterSheet(
+      context,
+      selectedTab: _selectedTab,
+      counts: AlertPresentation.countsByTab(_alerts),
+    );
+    if (selected != null && mounted) {
+      setState(() => _selectedTab = selected);
+    }
+  }
+
   List<AlertItem> get _filteredAlerts =>
-      _alerts.where((alert) => alert.tab == _selectedTab).toList();
+      AlertPresentation.filterByTab(_alerts, _selectedTab);
+
+  Widget _buildAlertList() {
+    if (_isLoading && _alerts.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 120),
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+
+    if (_filteredAlerts.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          AlertsEmptyState(tab: _selectedTab),
+        ],
+      );
+    }
+
+    if (_selectedTab == AlertTab.all) {
+      return AlertsGroupedList(alerts: _filteredAlerts);
+    }
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenHorizontal,
+        0,
+        AppSpacing.screenHorizontal,
+        AppSpacing.lg,
+      ),
+      itemCount: _filteredAlerts.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, index) {
+        return AlertCard(alert: _filteredAlerts[index]);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredAlerts;
+    final filteredCount = _filteredAlerts.length;
 
     return ColoredBox(
       color: AppColors.background,
@@ -102,60 +157,18 @@ class _AlertsScreenState extends State<AlertsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSpacing.md),
-            const Text(
-              AlertStrings.screenTitle,
+            AlertsScreenHeader(onFilterTap: _openFilterSheet),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              AlertStrings.filterSummary(_selectedTab.label, filteredCount),
               textAlign: TextAlign.center,
-              style: AppTypography.appBarTitle,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AlertFilterChips(
-              selectedTab: _selectedTab,
-              onTabChanged: (tab) => setState(() => _selectedTab = tab),
+              style: AppTypography.bodySecondary.copyWith(fontSize: 13),
             ),
             const SizedBox(height: AppSpacing.md),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadAlerts,
-                child: _isLoading && _alerts.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 120),
-                          Center(child: CircularProgressIndicator()),
-                        ],
-                      )
-                    : filtered.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              SizedBox(
-                                height: 120,
-                                child: Center(
-                                  child: Text(
-                                    AlertStrings.emptyList,
-                                    style: AppTypography.bodySecondary.copyWith(
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.screenHorizontal,
-                              0,
-                              AppSpacing.screenHorizontal,
-                              AppSpacing.lg,
-                            ),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: AppSpacing.sm),
-                            itemBuilder: (context, index) {
-                              return AlertCard(alert: filtered[index]);
-                            },
-                          ),
+                child: _buildAlertList(),
               ),
             ),
             if (_inmetHasError && _alerts.isNotEmpty)

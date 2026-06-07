@@ -11,7 +11,7 @@ const sampleInmetRss = '''
           <tr><th>Evento</th><td>Chuva intensa</td></tr>
           <tr><th>Severidade</th><td>Grave</td></tr>
           <tr><th>Início</th><td>07/06/2026 09:00</td></tr>
-          <tr><th>Fim</th><td>07/06/2026 18:00</td></tr>
+          <tr><th>Fim</th><td>08/06/2026 18:00</td></tr>
           <tr><th>Descrição</th><td>Previsão de chuva forte.</td></tr>
           <tr><th>Área</th><td>Foz do Iguaçu/PR</td></tr>
         </table>

@@ -2,11 +2,15 @@ import '../core/constants/alert_strings.dart';
 import 'home_data.dart';
 
 enum AlertTab {
+  all,
   active,
   recent,
   informative;
 
+  static const categories = [active, recent, informative];
+
   String get label => switch (this) {
+        AlertTab.all => AlertStrings.tabAll,
         AlertTab.active => AlertStrings.tabActive,
         AlertTab.recent => AlertStrings.tabRecent,
         AlertTab.informative => AlertStrings.tabInformative,

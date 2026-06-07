@@ -81,6 +81,8 @@ Future<void> _goToLogin(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
+  EnvironmentalRepository? environmentalRepository,
+  AlertsRepository? alertsRepository,
   UnifiedLocationResolver? locationResolver,
   ViaCepClient? viaCepClient,
 }) async {
@@ -88,6 +90,8 @@ Future<void> _goToLogin(
     _buildApp(
       mapRepository: mapRepository,
       authRepository: authRepository,
+      environmentalRepository: environmentalRepository,
+      alertsRepository: alertsRepository,
       locationResolver: locationResolver,
       viaCepClient: viaCepClient,
     ),
@@ -101,12 +105,16 @@ Future<void> _loginAndGoHome(
   WidgetTester tester, {
   MapRepository? mapRepository,
   AuthRepository? authRepository,
+  EnvironmentalRepository? environmentalRepository,
+  AlertsRepository? alertsRepository,
   UnifiedLocationResolver? locationResolver,
 }) async {
   await _goToLogin(
     tester,
     mapRepository: mapRepository,
     authRepository: authRepository,
+    environmentalRepository: environmentalRepository,
+    alertsRepository: alertsRepository,
     locationResolver: locationResolver,
   );
 
@@ -334,7 +342,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AlertStrings.screenTitle), findsAtLeast(1));
-    expect(find.text(AlertStrings.tabActive), findsOneWidget);
+    expect(
+      find.text(AlertStrings.filterSummary(AlertStrings.tabAll, 7)),
+      findsOneWidget,
+    );
     expect(find.text('Chuva intensa'), findsOneWidget);
     expect(find.text('Calor extremo'), findsOneWidget);
   });
@@ -347,11 +358,44 @@ void main() {
     await tester.tap(find.text(HomeStrings.navAlerts));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text(AlertStrings.tabRecent));
     await tester.pumpAndSettle();
 
     expect(find.text('Vento forte'), findsOneWidget);
     expect(find.text('Chuva intensa'), findsNothing);
+  });
+
+  testWidgets('Home hides active alerts when only informative alerts exist', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(
+      tester,
+      alertsRepository: FakeAlertsRepository(
+        alerts: AlertsData.mock
+            .where((alert) => alert.tab == AlertTab.informative)
+            .toList(),
+      ),
+    );
+
+    expect(find.text(HomeStrings.activeAlerts), findsNothing);
+  });
+
+  testWidgets('Alerts shows peaceful empty state when no alerts exist', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(
+      tester,
+      alertsRepository: FakeAlertsRepository(alerts: const []),
+    );
+
+    await tester.tap(find.text(HomeStrings.navAlerts));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AlertStrings.emptyAll), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
   });
 
   testWidgets('Home view all navigates to alerts screen', (

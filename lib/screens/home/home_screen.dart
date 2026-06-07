@@ -119,8 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         riskScore: snapshot.riskScore,
                         riskLevel: snapshot.riskLevel,
                       ),
-                      const SizedBox(height: AppSpacing.sectionGap),
-                      ActiveAlertsSection(alerts: _activeAlerts),
+                      if (_activeAlerts.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sectionGap),
+                        ActiveAlertsSection(alerts: _activeAlerts),
+                      ],
                       const SizedBox(height: AppSpacing.sectionGap),
                       IndicatorsSection(
                         indicators: SnapshotPresentation.toHomeIndicators(
