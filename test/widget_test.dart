@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:green_signal/app.dart';
 import 'package:green_signal/core/constants/app_strings.dart';
 import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
+import 'package:green_signal/services/map/map_repository.dart';
+import 'package:latlong2/latlong.dart';
 
-Future<void> _loginAndGoHome(WidgetTester tester) async {
-  await tester.pumpWidget(GreenSignalApp());
+FakeMapRepository _fakeMapRepository({
+  Duration delay = Duration.zero,
+}) {
+  return FakeMapRepository(
+    delay: delay,
+    points: [WeightedLatLng(const LatLng(-23.55, -46.63), 0.75)],
+  );
+}
+
+Future<void> _loginAndGoHome(
+  WidgetTester tester, {
+  MapRepository? mapRepository,
+}) async {
+  await tester.pumpWidget(
+    GreenSignalApp(mapRepository: mapRepository ?? _fakeMapRepository()),
+  );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 2500));
   await tester.pumpAndSettle();
@@ -70,6 +86,29 @@ void main() {
 
     expect(find.text(MapStrings.mapTitle), findsOneWidget);
     expect(find.text(MapStrings.layerAirQuality), findsOneWidget);
+    expect(find.text(MapStrings.layerHotspots), findsOneWidget);
+    expect(find.text(MapStrings.legendAirLow), findsOneWidget);
+    expect(find.text(MapStrings.attribution), findsOneWidget);
+  });
+
+  testWidgets('Map shows loading indicator while fetching data', (
+    WidgetTester tester,
+  ) async {
+    await _loginAndGoHome(
+      tester,
+      mapRepository: _fakeMapRepository(
+        delay: const Duration(milliseconds: 500),
+      ),
+    );
+
+    await tester.tap(find.text(HomeStrings.navMap));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('Map filter switches to temperature layer', (
@@ -84,5 +123,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(MapStrings.layerTemperature), findsOneWidget);
+    expect(find.text(MapStrings.legendTempLow), findsOneWidget);
+    expect(find.text(MapStrings.legendTempHigh), findsOneWidget);
+    expect(find.textContaining('15°C'), findsOneWidget);
+    expect(find.textContaining('35°C'), findsOneWidget);
   });
 }

@@ -1,26 +1,145 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
+
+import '../../core/constants/map_config.dart';
 import '../../core/constants/map_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../models/inpe_hotspot_point.dart';
 import '../../models/map_layer_data.dart';
+import '../../services/map/map_grid_sampler.dart';
+import '../../services/map/map_repository.dart';
 import '../../widgets/map/environmental_map_view.dart';
 import '../../widgets/map/map_filter_chips.dart';
 import '../../widgets/map/map_legend.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.repository});
+
+  final MapRepository? repository;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
+  late final MapRepository _repository;
+  LiveMapRepository? _liveRepository;
   MapLayer _selectedLayer = MapLayer.airQuality;
+  List<WeightedLatLng> _points = const [];
+  List<InpeHotspotPoint> _hotspotMarkers = const [];
+  double _gridLatStep = 0;
+  double _gridLngStep = 0;
+  MapLayerDisplayMode _displayMode = MapLayerDisplayMode.heatmap;
+  bool _isLoading = false;
+  bool _hasError = false;
+  bool _isEmpty = false;
+  int _fetchGeneration = 0;
+  LatLngBounds? _lastBounds;
+  double? _lastZoom;
+  Timer? _fetchDebounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.repository != null) {
+      _repository = widget.repository!;
+    } else {
+      _liveRepository = LiveMapRepository();
+      _repository = _liveRepository!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _fetchDebounceTimer?.cancel();
+    _liveRepository?.dispose();
+    super.dispose();
+  }
+
+  void _onLayerChanged(MapLayer layer) {
+    if (layer == _selectedLayer) return;
+    setState(() {
+      _selectedLayer = layer;
+      _points = const [];
+      _hotspotMarkers = const [];
+      _gridLatStep = 0;
+      _gridLngStep = 0;
+    });
+    if (_lastBounds != null && _lastZoom != null) {
+      _scheduleFetch(_lastBounds!, _lastZoom!);
+    }
+  }
+
+  void _onViewportChanged(LatLngBounds bounds, double zoom) {
+    _scheduleFetch(bounds, zoom);
+  }
+
+  void _scheduleFetch(LatLngBounds bounds, double zoom) {
+    _lastBounds = bounds;
+    _lastZoom = zoom;
+    _fetchDebounceTimer?.cancel();
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _isEmpty = false;
+    });
+    _fetchDebounceTimer = Timer(
+      const Duration(milliseconds: MapConfig.debounceMs),
+      () => _loadForViewport(bounds, zoom),
+    );
+  }
+
+  Future<void> _loadForViewport(LatLngBounds bounds, double zoom) async {
+    final generation = ++_fetchGeneration;
+
+    final result = await _repository.fetchLayer(
+      layer: _selectedLayer,
+      bounds: bounds,
+      zoom: zoom,
+    );
+
+    if (!mounted || generation != _fetchGeneration) return;
+
+    setState(() {
+      _points = result.points;
+      _hotspotMarkers = result.hotspotMarkers;
+      _gridLatStep = result.gridLatStep;
+      _gridLngStep = result.gridLngStep;
+      _displayMode = result.displayMode;
+      _isLoading = false;
+      _hasError = result.hasError;
+      _isEmpty = result.isEmpty;
+    });
+
+    if (result.hasError && !result.isStale && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MapStrings.loadError)),
+      );
+    } else if (result.isStale && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MapStrings.staleDataNotice)),
+      );
+    }
+  }
+
+  String? _emptyMessage() {
+    if (!_isEmpty || _isLoading) return null;
+    return switch (_selectedLayer) {
+      MapLayer.rain => MapStrings.noRainInRegion,
+      MapLayer.hotspots => MapStrings.noHotspotsInRegion,
+      MapLayer.temperature => MapStrings.noTemperatureInRegion,
+      _ => null,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final emptyMessage = _emptyMessage();
+
     return ColoredBox(
       color: AppColors.background,
       child: SafeArea(
@@ -37,13 +156,64 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: AppSpacing.md),
             MapFilterChips(
               selectedLayer: _selectedLayer,
-              onLayerChanged: (layer) => setState(() => _selectedLayer = layer),
+              onLayerChanged: _onLayerChanged,
             ),
             const SizedBox(height: AppSpacing.md),
             Expanded(
-              child: EnvironmentalMapView(layer: _selectedLayer),
+              child: EnvironmentalMapView(
+                key: ValueKey(_selectedLayer),
+                layer: _selectedLayer,
+                points: _points,
+                displayMode: _displayMode,
+                hotspotMarkers: _hotspotMarkers,
+                gridLatStep: _gridLatStep,
+                gridLngStep: _gridLngStep,
+                isLoading: _isLoading,
+                onViewportChanged: _onViewportChanged,
+              ),
             ),
-            const MapLegend(),
+            if (_hasError &&
+                _points.isEmpty &&
+                _hotspotMarkers.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenHorizontal,
+                ),
+                child: Text(
+                  MapStrings.loadError,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySecondary.copyWith(
+                    color: AppColors.riskHigh,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            if (emptyMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenHorizontal,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Text(
+                  emptyMessage,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySecondary.copyWith(fontSize: 13),
+                ),
+              ),
+            MapLegend(layer: _selectedLayer),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenHorizontal,
+                0,
+                AppSpacing.screenHorizontal,
+                AppSpacing.sm,
+              ),
+              child: Text(
+                MapStrings.attribution,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySecondary.copyWith(fontSize: 11),
+              ),
+            ),
           ],
         ),
       ),

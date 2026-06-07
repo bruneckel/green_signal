@@ -8,6 +8,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/shared/placeholder_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../services/map/map_repository.dart';
 import '../shell/main_shell.dart';
 
 abstract final class AppRoutes {
@@ -23,7 +24,7 @@ abstract final class AppRoutes {
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
-GoRouter createRouter() {
+GoRouter createRouter({MapRepository? mapRepository}) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
@@ -63,7 +64,9 @@ GoRouter createRouter() {
               GoRoute(
                 path: AppRoutes.map,
                 name: 'map',
-                builder: (context, state) => const MapScreen(),
+                builder: (context, state) => MapScreen(
+                  repository: mapRepository,
+                ),
               ),
             ],
           ),
