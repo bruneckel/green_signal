@@ -12,6 +12,7 @@ import '../screens/score/score_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/address/user_coordinates_resolver.dart';
 import '../services/address/viacep_client.dart';
+import '../services/alerts/alerts_repository.dart';
 import '../services/auth/auth_repository.dart';
 import '../services/environment/environmental_repository.dart';
 import '../services/environment/geocoding_client.dart';
@@ -37,6 +38,7 @@ GoRouter createRouter({
   MapRepository? mapRepository,
   EnvironmentalRepository? environmentalRepository,
   UnifiedLocationResolver? locationResolver,
+  AlertsRepository? alertsRepository,
   ViaCepClient? viaCepClient,
   required AuthRepository authRepository,
 }) {
@@ -48,6 +50,7 @@ GoRouter createRouter({
           geocodingClient: GeocodingClient(),
         ),
       );
+  final alertsRepo = alertsRepository ?? LiveAlertsRepository();
   final cepClient = viaCepClient ?? LiveViaCepClient();
 
   return GoRouter(
@@ -116,6 +119,7 @@ GoRouter createRouter({
                   authRepository: authRepository,
                   environmentalRepository: envRepo,
                   locationResolver: unifiedResolver,
+                  alertsRepository: alertsRepo,
                 ),
               ),
             ],
@@ -138,7 +142,12 @@ GoRouter createRouter({
               GoRoute(
                 path: AppRoutes.alerts,
                 name: 'alerts',
-                builder: (context, state) => const AlertsScreen(),
+                builder: (context, state) => AlertsScreen(
+                  authRepository: authRepository,
+                  environmentalRepository: envRepo,
+                  locationResolver: unifiedResolver,
+                  alertsRepository: alertsRepo,
+                ),
               ),
             ],
           ),

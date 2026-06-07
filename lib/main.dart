@@ -4,6 +4,7 @@ import 'app.dart';
 import 'services/address/brasil_api_cep_client.dart';
 import 'services/address/user_coordinates_resolver.dart';
 import 'services/address/viacep_client.dart';
+import 'services/alerts/alerts_repository.dart';
 import 'services/auth/local_auth_repository.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
@@ -39,6 +40,7 @@ Future<void> main() async {
   final locationResolver = UnifiedLocationResolver(
     coordinatesResolver: coordinatesResolver,
   );
+  final alertsRepository = LiveAlertsRepository();
   final viaCepClient = LiveViaCepClient();
 
   runApp(
@@ -47,6 +49,7 @@ Future<void> main() async {
       mapRepository: mapRepository,
       environmentalRepository: environmentalRepository,
       locationResolver: locationResolver,
+      alertsRepository: alertsRepository,
       viaCepClient: viaCepClient,
     ),
   );

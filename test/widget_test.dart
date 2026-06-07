@@ -9,6 +9,8 @@ import 'package:green_signal/core/constants/home_strings.dart';
 import 'package:green_signal/core/constants/map_strings.dart';
 import 'package:green_signal/core/constants/score_strings.dart';
 import 'package:green_signal/models/environmental_snapshot.dart';
+import 'package:green_signal/models/alert_item.dart';
+import 'package:green_signal/services/alerts/alerts_repository.dart';
 import 'package:green_signal/services/address/viacep_client.dart';
 import 'package:green_signal/services/auth/auth_repository.dart';
 import 'package:green_signal/services/auth/fake_auth_repository.dart';
@@ -36,6 +38,10 @@ FakeEnvironmentalRepository _fakeEnvironmentalRepository({
   return FakeEnvironmentalRepository(delay: delay);
 }
 
+FakeAlertsRepository _fakeAlertsRepository() {
+  return FakeAlertsRepository(alerts: AlertsData.mock);
+}
+
 final _fakeUnifiedLocationResolver = UnifiedLocationResolver();
 
 class _DelayedUnifiedLocationResolver extends UnifiedLocationResolver {
@@ -56,6 +62,7 @@ Widget _buildApp({
   MapRepository? mapRepository,
   AuthRepository? authRepository,
   EnvironmentalRepository? environmentalRepository,
+  AlertsRepository? alertsRepository,
   UnifiedLocationResolver? locationResolver,
   ViaCepClient? viaCepClient,
 }) {
@@ -64,6 +71,7 @@ Widget _buildApp({
     authRepository: authRepository ?? _fakeAuthRepository(),
     environmentalRepository:
         environmentalRepository ?? _fakeEnvironmentalRepository(),
+    alertsRepository: alertsRepository ?? _fakeAlertsRepository(),
     locationResolver: locationResolver ?? _fakeUnifiedLocationResolver,
     viaCepClient: viaCepClient ?? _fakeViaCepClient,
   );

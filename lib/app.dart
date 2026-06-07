@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'router/app_router.dart';
 import 'services/address/user_coordinates_resolver.dart';
 import 'services/address/viacep_client.dart';
+import 'services/alerts/alerts_repository.dart';
 import 'services/auth/auth_repository.dart';
 import 'services/environment/environmental_repository.dart';
 import 'services/environment/geocoding_client.dart';
@@ -17,6 +18,7 @@ class GreenSignalApp extends StatelessWidget {
     MapRepository? mapRepository,
     EnvironmentalRepository? environmentalRepository,
     UnifiedLocationResolver? locationResolver,
+    AlertsRepository? alertsRepository,
     ViaCepClient? viaCepClient,
   }) {
     final mapRepo = mapRepository ?? LiveMapRepository();
@@ -27,6 +29,7 @@ class GreenSignalApp extends StatelessWidget {
             geocodingClient: GeocodingClient(),
           ),
         );
+    final alertsRepo = alertsRepository ?? LiveAlertsRepository();
     final cepClient = viaCepClient ?? LiveViaCepClient();
 
     return GreenSignalApp._(
@@ -34,12 +37,14 @@ class GreenSignalApp extends StatelessWidget {
       mapRepository: mapRepo,
       environmentalRepository: envRepo,
       locationResolver: unifiedResolver,
+      alertsRepository: alertsRepo,
       viaCepClient: cepClient,
       router: createRouter(
         authRepository: authRepository,
         mapRepository: mapRepo,
         environmentalRepository: envRepo,
         locationResolver: unifiedResolver,
+        alertsRepository: alertsRepo,
         viaCepClient: cepClient,
       ),
     );
@@ -50,6 +55,7 @@ class GreenSignalApp extends StatelessWidget {
     required this.mapRepository,
     required this.environmentalRepository,
     required this.locationResolver,
+    required this.alertsRepository,
     required this.viaCepClient,
     required GoRouter router,
   }) : _router = router;
@@ -58,6 +64,7 @@ class GreenSignalApp extends StatelessWidget {
   final MapRepository mapRepository;
   final EnvironmentalRepository environmentalRepository;
   final UnifiedLocationResolver locationResolver;
+  final AlertsRepository alertsRepository;
   final ViaCepClient viaCepClient;
   final GoRouter _router;
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/alerts_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../models/environmental_snapshot.dart';
 import '../../models/home_data.dart';
+import '../../services/alerts/alert_presentation.dart';
+import '../../services/alerts/alerts_repository.dart';
 import '../../services/auth/auth_repository.dart';
 import '../../services/environment/environmental_repository.dart';
 import '../../services/environment/location_resolver.dart';
@@ -19,11 +22,13 @@ class HomeScreen extends StatefulWidget {
     required this.authRepository,
     required this.environmentalRepository,
     required this.locationResolver,
+    required this.alertsRepository,
   });
 
   final AuthRepository authRepository;
   final EnvironmentalRepository environmentalRepository;
   final LocationResolver locationResolver;
+  final AlertsRepository alertsRepository;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -33,12 +38,22 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   EnvironmentalSnapshot? _snapshot;
   ResolvedLocation? _location;
+  List<ActiveAlert> _activeAlerts = const [];
 
   @override
   void initState() {
     super.initState();
+    widget.authRepository.addListener(_onAuthChanged);
     _loadSnapshot();
   }
+
+  @override
+  void dispose() {
+    widget.authRepository.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() => _loadSnapshot();
 
   Future<void> _loadSnapshot() async {
     setState(() => _isLoading = true);
@@ -50,12 +65,20 @@ class _HomeScreenState extends State<HomeScreen> {
       point: location.position,
       locationLabel: location.label,
     );
+    final alertsResult = await widget.alertsRepository.fetchAlerts(
+      location: location,
+      snapshot: snapshot,
+    );
 
     if (!mounted) return;
 
     setState(() {
       _location = location;
       _snapshot = snapshot;
+      _activeAlerts = AlertPresentation.toActiveAlerts(
+        alertsResult.alerts,
+        limit: AlertsConfig.homeActiveAlertsLimit,
+      );
       _isLoading = false;
     });
   }
@@ -97,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         riskLevel: snapshot.riskLevel,
                       ),
                       const SizedBox(height: AppSpacing.sectionGap),
-                      ActiveAlertsSection(alerts: HomeData.mock.alerts),
+                      ActiveAlertsSection(alerts: _activeAlerts),
                       const SizedBox(height: AppSpacing.sectionGap),
                       IndicatorsSection(
                         indicators: SnapshotPresentation.toHomeIndicators(
